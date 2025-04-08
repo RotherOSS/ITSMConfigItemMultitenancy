@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2024 Rother OSS GmbH, https://otobo.de/
+# Copyright (C) 2019-2024 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -228,7 +228,7 @@ sub Run {
             $LinkSort .= ";$SearchParam=" . $LayoutObject->Ascii2Html( Text => $GetParam{$SearchParam} );
         }
 
-        my @ArraySearchParams = qw(Classes);
+        my @ArraySearchParams = qw(ClassIDs);
 
         if ( $Config->{DeploymentState} ) {
             push @ArraySearchParams, 'DeplStateIDs';
@@ -346,10 +346,6 @@ sub Run {
             return $Output;
         }
 
-        else {
-            $SearchConfig{Classes} = $PermissionConditionConfig->{Classes};
-        }
-
         # merge filtered deployment states with permission condition deployment states
         if ( IsArrayRefWithData( $GetParam{DeplStateIDs} ) ) {
             my @SearchDeplStates;
@@ -422,12 +418,16 @@ sub Run {
 
         # restrict search by permission condition customer company and customer user
         # NOTE this overwrites previously set search params for the configured dynamic fields
-        $SearchConfig{"DynamicField_$PermissionConditionConfig->{CustomerCompanyDynamicField}"} = {
-            Equals => $Self->{CustomerID},
-        };
-        $SearchConfig{"DynamicField_$PermissionConditionConfig->{CustomerUserDynamicField}"} = {
-            Equals => $Self->{UserID},
-        };
+        if ( $PermissionConditionConfig->{CustomerCompanyDynamicField} ) {
+            $SearchConfig{"DynamicField_$PermissionConditionConfig->{CustomerCompanyDynamicField}"} = {
+                Equals => $Self->{CustomerID},
+            };
+        }
+        if ( $PermissionConditionConfig->{CustomerUserDynamicField} ) {
+            $SearchConfig{"DynamicField_$PermissionConditionConfig->{CustomerUserDynamicField}"} = {
+                Equals => $Self->{UserID},
+            };
+        }
 
         my %Filters = (
             $Filter => {
@@ -525,6 +525,12 @@ sub Run {
                 ITSMConfigItemListHTML => $ConfigItemListHTML,
             },
         );
+
+        if ( defined $ConfigObject->Get("CustomerFrontend::Module")->{"CustomerITSMConfigItemSearch"} ) {
+            $LayoutObject->Block(
+                Name => 'SearchBox',
+            );
+        }
     }
     elsif ( !$Self->{Subaction} ) {
 

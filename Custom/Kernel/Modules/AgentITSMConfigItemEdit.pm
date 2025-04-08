@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2024 Rother OSS GmbH, https://otobo.de/
+# Copyright (C) 2019-2024 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -32,8 +32,6 @@ use Kernel::System::VariableCheck qw(:all);
 use Kernel::Language              qw(Translatable);
 
 our $ObjectManagerDisabled = 1;
-
-use Data::Dumper;
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -215,8 +213,8 @@ sub Run {
             # get general form data
             for my $Param (qw(Name VersionString DeplStateID InciStateID Description GroupID)) {
                 $GetParam{$Param} = $ConfigItem->{$Param};
-
             }
+
             DYNAMICFIELD:
             for my $DynamicFieldConfig ( $DynamicFieldList->@* ) {
                 next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
@@ -244,7 +242,7 @@ sub Run {
         ) // [];
 
         for my $FieldName ( $ActiveFields->@* ) {
-            push @{ $DynamicFieldList }, $Definition->{DynamicFieldRef}{$FieldName};
+            push @{$DynamicFieldList}, $Definition->{DynamicFieldRef}{$FieldName};
         }
 
         # get general form data
@@ -1228,6 +1226,8 @@ sub Run {
             InciStateOptionStrg => $InciStateOptionStrg,
         },
     );
+
+    # output group block
     my %GroupList;
     my $GroupConfig;
     if ( $ClassPreferences{ConfigItemGroup} && $ClassPreferences{ConfigItemGroup}->[0] ) {
@@ -1277,7 +1277,6 @@ sub Run {
             },
         );
     }
-
     # generate base url
     my $URL = "Action=PictureUpload;FormID=$Self->{FormID};ContentID=";
 
@@ -1453,8 +1452,8 @@ sub Run {
 
                 next SECTION unless $HTML =~ /\w/;
 
-                my ( $SectionHeader ) = grep { $_->{Header} } $Section->{Content}->@*;
-                if ( $SectionHeader ) {
+                my ($SectionHeader) = grep { $_->{Header} } $Section->{Content}->@*;
+                if ($SectionHeader) {
                     $PageDynamicFieldHTML .= $LayoutObject->Output(
                         Template => $SectionHeaderTemplate,
                         Data     => {
@@ -1486,17 +1485,17 @@ sub Run {
         if ( scalar @PageHTML > 1 ) {
             my $HeaderTemplate = '<div class="Row Row_PageHeader"><h2>[% Translate(Data.Name) | html %]</h2><hr/></div>';
 
-            for my $Page ( @PageHTML ) {
+            for my $Page (@PageHTML) {
                 $DynamicFieldHTML .= $LayoutObject->Output(
                     Template => $HeaderTemplate,
                     Data     => {
                         Name => $Page->{Name},
                     },
                 );
-                $DynamicFieldHTML .= $Page->{HTML},
+                $DynamicFieldHTML .= $Page->{HTML};
             }
 
-            if ( $ShowDescription ) {
+            if ($ShowDescription) {
                 $DynamicFieldHTML .= $LayoutObject->Output(
                     Template => $HeaderTemplate,
                     Data     => {
@@ -1505,11 +1504,11 @@ sub Run {
                 );
             }
         }
-        elsif ( @PageHTML ) {
-            $DynamicFieldHTML .= $PageHTML[0]{HTML},
+        elsif (@PageHTML) {
+            $DynamicFieldHTML .= $PageHTML[0]{HTML};
         }
 
-        if ( $ShowDescription ) {
+        if ($ShowDescription) {
             $LayoutObject->Block(
                 Name => 'RowDescription',
                 Data => {

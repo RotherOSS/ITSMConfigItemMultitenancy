@@ -81,29 +81,39 @@ sub Run {
         }
     }
 
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
     # get config item data
     my $ConfigItem = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
         ConfigItemID => $Param{ItemID},
     );
 
-    # no GroupID attribute at all? exit, something is wrong
-    return 1 unless exists $ConfigItem->{GroupID};
+    # if there is no GroupID attribute at all, exit because something is wrong
+    return unless exists $ConfigItem->{GroupID};
 
-    # the item permission group is optional, so grant access if it is not set
+    # the item permission group is optional, so grant access if it exists but is not set
     my $ItemPermission = $ConfigItem->{GroupID};
     return 1 unless $ItemPermission;
 
     # get user groups
-    my @GroupIDs = $Kernel::OM->Get('Kernel::System::Group')->GroupMemberList(
+    my %Groups = $Kernel::OM->Get('Kernel::System::Group')->GroupMemberList(
         UserID => $Param{UserID},
         Type   => $Param{Type},
-        Result => 'ID',
+        Result => 'HASH',
         Cached => 1,
     );
 
-    # looking for group id, grant access if user is in group
-    for my $GroupID (@GroupIDs) {
-        return 1 if $ItemPermission && $GroupID eq $ItemPermission;
+    my $ItemManagementGroup = $ConfigObject->Get('ITSMConfigItemManagementGroup');
+
+    # enforce group permissions only if user is not a member of the ci management group
+    #if (!grep { $_ eq $ItemManagementGroup } values %AllowedGroupsHash) {
+    #    my @AllowedGroupIDs = keys %AllowedGroupsHash;
+    #    $Param{GroupIDs} = \@AllowedGroupIDs;
+    #}
+
+    # looking for group id, grant access if user is in group or is a member of the ci management group
+    for my $GroupID (keys %Groups) {
+        return 1 if $Groups{$GroupID} eq $ItemManagementGroup || $GroupID eq $ItemPermission;
     }
 
     # refuse access per default

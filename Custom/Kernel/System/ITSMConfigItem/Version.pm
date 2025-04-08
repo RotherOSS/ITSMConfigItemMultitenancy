@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2024 Rother OSS GmbH, https://otobo.de/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -616,7 +616,8 @@ sub VersionAdd {
 
         # override possible incoming version string
         $Version{VersionString} = $VersionStringModuleObject->VersionStringGet(
-            Version => \%Version,
+            Version    => \%Version,
+            VersionAdd => 1,
         );
     }
 
@@ -735,6 +736,7 @@ END_SQL
     DYNAMICFIELD:
     for my $DynamicField ( values $Definition->{DynamicFieldRef}->%* ) {
         next DYNAMICFIELD if !defined $Version{ 'DynamicField_' . $DynamicField->{Name} };
+        next DYNAMICFIELD if $DynamicField->{FieldType} eq 'Lens' && !$Param{ 'DynamicField_' . $DynamicField->{Name} };
 
         my $Success = $DynamicFieldBackendObject->ValueSet(
             DynamicFieldConfig => $DynamicField,
@@ -742,26 +744,24 @@ END_SQL
             Value              => $Version{ 'DynamicField_' . $DynamicField->{Name} },
             UserID             => $Param{UserID},
             ConfigItemHandled  => 1,
+            ExternalSource     => $Param{ExternalSource},
         );
 
         # only throw events for fields changed from the last version - checked by ConfigItemUpdate()
         if ( $Success && exists $Param{ 'DynamicField_' . $DynamicField->{Name} } ) {
             push @UpdatedDynamicFields, $DynamicField->{Name};
         }
-    }
 
-    # TODO: Incorporate somewhere probably
-    #    # trigger definition update event
-    #    if ( $Events->{DefinitionUpdate} ) {
-    #        $Self->EventHandler(
-    #            Event => 'DefinitionUpdate',
-    #            Data  => {
-    #                ConfigItemID => $Param{ConfigItemID},
-    #                Comment      => $Events->{DefinitionUpdate},
-    #            },
-    #            UserID => $Param{UserID},
-    #        );
-    #    }
+        # update version data with actual dynamic field values
+        # important in case of reference fields
+        if ( $Param{ExternalSource} && $DynamicField->{Config}{ImportSearchAttribute} ) {
+            my $Value = $DynamicFieldBackendObject->ValueGet(
+                DynamicFieldConfig => $DynamicField,
+                ObjectID           => $VersionID,
+            );
+            $Version{ 'DynamicField_' . $DynamicField->{Name} } = $Value;
+        }
+    }
 
     # Clear the cache for ConfigItemGet
     my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
@@ -1027,16 +1027,28 @@ END_SQL
         next DYNAMICFIELD unless $Definition->{DynamicFieldRef}{$1};
 
         my $DynamicField = $Definition->{DynamicFieldRef}{$1};
-        my $Success      = $DynamicFieldBackendObject->ValueSet(
+
+        my $Success = $DynamicFieldBackendObject->ValueSet(
             DynamicFieldConfig => $DynamicField,
             ObjectID           => $Version->{VersionID},
             Value              => $Param{$Attribute},
             UserID             => $Param{UserID},
             ConfigItemHandled  => 1,
+            ExternalSource     => $Param{ExternalSource},
         );
 
         if ($Success) {
             push @UpdatedDynamicFields, $DynamicField->{Name};
+        }
+
+        # update version data with actual dynamic field values
+        # important in case of reference fields
+        if ( $Param{ExternalSource} && $DynamicField->{Config}{ImportSearchAttribute} ) {
+            my $Value = $DynamicFieldBackendObject->ValueGet(
+                DynamicFieldConfig => $DynamicField,
+                ObjectID           => $Version->{VersionID},
+            );
+            $Param{$Attribute} = $Value;
         }
     }
 

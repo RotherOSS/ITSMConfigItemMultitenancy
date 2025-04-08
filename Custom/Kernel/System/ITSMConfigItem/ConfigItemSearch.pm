@@ -201,6 +201,7 @@ sub ConfigItemSearch {
     # get objects
     my $DBObject             = $Kernel::OM->Get('Kernel::System::DB');
     my $GeneralCatalogObject = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
+    my $ConfigObject         = $Kernel::OM->Get('Kernel::Config');
 
     # quote id array elements
     ARGUMENT:
@@ -343,16 +344,22 @@ sub ConfigItemSearch {
 
         $Param{ClassIDs} = \@AllowedClassIDs;
 
-        my @AllowedGroupIDs = $Kernel::OM->Get('Kernel::System::Group')->GroupMemberList(
+        my %AllowedGroupsHash = $Kernel::OM->Get('Kernel::System::Group')->GroupMemberList(
             UserID => $Param{UserID},
             Type   => $Param{Permission} // 'ro',
-            Result => 'ID',
+            Result => 'HASH',
             Cached => 1,
         );
 
-        return if !@AllowedGroupIDs;
+        return if !%AllowedGroupsHash;
 
-        $Param{GroupIDs} = \@AllowedGroupIDs;
+        my $ItemManagementGroup = $ConfigObject->Get('ITSMConfigItemManagementGroup');
+
+        # enforce group permissions only if user is not a member of the ci management group
+        if (!grep { $_ eq $ItemManagementGroup } values %AllowedGroupsHash) {
+            my @AllowedGroupIDs = keys %AllowedGroupsHash;
+            $Param{GroupIDs} = \@AllowedGroupIDs;
+        }
     }
 
     # class ids

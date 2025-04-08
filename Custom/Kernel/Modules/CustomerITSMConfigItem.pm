@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2024 Rother OSS GmbH, https://otobo.de/
+# Copyright (C) 2019-2024 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -255,7 +255,7 @@ sub Run {
             }
 
             # set as selected filter if not present
-            $Filter ||= $PermissionConditionConfig->{Name};
+            $Filter ||= $ConfigCounter;
 
             # collect dynamic field search params
             my %DFSearchParams;
@@ -284,17 +284,24 @@ sub Run {
                     Result => 'HASH',
                 );
             my @AuthorizedGroupIDs = keys %AuthorizedGroupsHash;
+            my %PermissionConditionSearchParams;
+            if ( $PermissionConditionConfig->{CustomerCompanyDynamicField} ) {
+                $PermissionConditionSearchParams{"DynamicField_$PermissionConditionConfig->{CustomerCompanyDynamicField}"} = {
+                    Equals => $Self->{CustomerID},
+                };
+            }
+            if ( $PermissionConditionConfig->{CustomerUserDynamicField} ) {
+                $PermissionConditionSearchParams{"DynamicField_$PermissionConditionConfig->{CustomerUserDynamicField}"} = {
+                    Equals => $Self->{UserID},
+                };
+            }
+
             my %FilterSearch = (
                 Classes    => $PermissionConditionConfig->{Classes},
-                GroupIDs => \@AuthorizedGroupIDs,
                 DeplStates => $PermissionConditionConfig->{DeploymentStates},
+                GroupIDs   => \@AuthorizedGroupIDs,
                 %DFSearchParams,
-                "DynamicField_$PermissionConditionConfig->{CustomerCompanyDynamicField}" => {
-                    Equals => $Self->{CustomerID},
-                },
-                "DynamicField_$PermissionConditionConfig->{CustomerUserDynamicField}" => {
-                    Equals => $Self->{UserID},
-                },
+                %PermissionConditionSearchParams,
                 %Sort,
                 Limit => $Self->{SearchLimit} // '1000',
             );
@@ -335,6 +342,7 @@ sub Run {
             if ( @ViewableClassIDs && @ViewableDeplStateIDs ) {
                 $Count = $ConfigItemObject->ConfigItemSearch(
                     %FilterSearch,
+                    %ColumnFilter,
                     Result => 'COUNT',
                 );
             }
@@ -480,6 +488,7 @@ sub Run {
         {
             @OriginalViewableConfigItems = $ConfigItemObject->ConfigItemSearch(
                 %{ $Filters{$Filter}->{Search} },
+                %ColumnFilter,
                 Limit  => $Limit,
                 Result => 'ARRAY',
             );

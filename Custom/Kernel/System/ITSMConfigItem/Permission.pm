@@ -115,7 +115,6 @@ sub Permission {
 
             # execute Run()
             my $AccessOk = $ModuleObject->Run(%Param);
-
             # check granted option (should I say ok)
             if ( !$AccessOk || !$Modules{$Module}->{Granted} ) {
                 # refuse access  because access is false but it's required
@@ -182,10 +181,10 @@ sub CustomerPermission {
         DynamicFields => any { $_->{CustomerUserDynamicField} || $_->{CustomerCompanyDynamicField} } values %Conditions,
     );
     my %GroupLookup = reverse $CustomerGroupObject->GroupMemberList(
-                    UserID => $Param{UserID},
-                    Type   => 'ro',
-                    Result => 'HASH',
-                );
+            UserID => $Param{UserID},
+            Type   => 'ro',
+            Result => 'HASH',
+        );
 
     # the attribute group_id must exist in the CI, even if null, otherwise there is a security gap
     return if !exists $ConfigItem->{GroupID};

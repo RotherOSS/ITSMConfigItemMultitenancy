@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2024 Rother OSS GmbH, https://otobo.de/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -32,7 +32,6 @@ use parent qw(
     Kernel::System::ITSMConfigItem::Number
     Kernel::System::ITSMConfigItem::Permission
     Kernel::System::ITSMConfigItem::Version
-    Kernel::System::ITSMConfigItem::XML
 );
 
 # core modules
@@ -232,6 +231,14 @@ A specific version is returned when the C<VersionID> is passed.
 When both C<ConfigItemID> and C<VersionID> are passed, then a consistency check is performed
 and the data for the specific version is returned.
 
+Error messages are suppressed if the parameter C<Silent> is passed.
+
+    my $ConfigItem = $ConfigItemObject->ConfigItemGet(
+        VersionID     => 243,
+        DynamicFields => 1,    # (optional) default 0 (0|1)
+        Silent        => 1,    # (optional) default 0 (0|1)
+    );
+
 A hashref with the following keys is returned:
 
 =over 4
@@ -299,12 +306,17 @@ When the parameter C<DynamicFields> is passed then the dynamic fields are return
 sub ConfigItemGet {
     my ( $Self, %Param ) = @_;
 
+    # whether to suppress error messages
+    my $Silent = $Param{Silent} ? 1 : 0;
+
     # check needed stuff
     if ( !$Param{ConfigItemID} && !$Param{VersionID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need ConfigItemID or VersionID!',
-        );
+        if ( !$Silent ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => 'Need ConfigItemID or VersionID!',
+            );
+        }
 
         return;
     }
@@ -336,10 +348,12 @@ sub ConfigItemGet {
 
     if ($Cache) {
         if ( $Param{VersionID} && $Param{ConfigItemID} && $Param{ConfigItemID} ne $Cache->{ConfigItemID} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "VersionID $Param{VersionID} is not a version of ConfigItemID $Param{ConfigItemID}!",
-            );
+            if ( !$Silent ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "VersionID $Param{VersionID} is not a version of ConfigItemID $Param{ConfigItemID}!",
+                );
+            }
 
             return;
         }
@@ -357,8 +371,7 @@ sub ConfigItemGet {
 SELECT ci.id, ci.configitem_number, ci.class_id, ci.last_version_id,
     ci.cur_depl_state_id, ci.cur_inci_state_id,
     v.id, v.name, v.version_string, v.definition_id, v.depl_state_id, v.inci_state_id, v.description,
-    v.create_time, v.create_by, v.change_time, v.change_by,
-    v.group_id
+    v.create_time, v.create_by, v.change_time, v.change_by, v.group_id
   FROM configitem_version v
   INNER JOIN configitem ci
     ON v.configitem_id = ci.id
@@ -371,13 +384,13 @@ END_SQL
 
     # get latest ConfigItemVersion
     else {
+
         @Row = $Kernel::OM->Get('Kernel::System::DB')->SelectRowArray(
             SQL => <<'END_SQL',
 SELECT ci.id, ci.configitem_number, ci.class_id, ci.last_version_id,
     ci.cur_depl_state_id, ci.cur_inci_state_id,
     v.id, v.name, v.version_string, v.definition_id, v.depl_state_id, v.inci_state_id, v.description,
-    ci.create_time, ci.create_by, ci.change_time, ci.change_by,
-    v.group_id
+    ci.create_time, ci.create_by, ci.change_time, ci.change_by, v.group_id
   FROM configitem ci
   LEFT JOIN configitem_version v
     ON ci.last_version_id = v.id
@@ -411,18 +424,22 @@ END_SQL
 
     # check config item
     if ( !$ConfigItem{ConfigItemID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "No such ConfigItemID ($Param{ConfigItemID})!",
-        );
+        if ( !$Silent ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "No such ConfigItemID ($Param{ConfigItemID})!",
+            );
+        }
 
         return;
     }
     if ( $Param{VersionID} && $Param{ConfigItemID} && $Param{ConfigItemID} ne $ConfigItem{ConfigItemID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "VersionID $Param{VersionID} is not a version of ConfigItemID $Param{ConfigItemID}!",
-        );
+        if ( !$Silent ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "VersionID $Param{VersionID} is not a version of ConfigItemID $Param{ConfigItemID}!",
+            );
+        }
 
         return;
     }
@@ -621,7 +638,7 @@ sub ConfigItemAdd {
     if ($NameModule) {
 
         # check if name module exists
-        if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($NameModule) ) {
+        if ( !$Kernel::OM->Get('Kernel::System::Main')->Require("Kernel::System::ITSMConfigItem::Name::$NameModule") ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Can't load name module for class $ClassList->{ $Param{ClassID} }!",
@@ -629,8 +646,6 @@ sub ConfigItemAdd {
 
             return;
         }
-
-        delete $Param{Name};
     }
     else {
 
@@ -705,6 +720,7 @@ END_SQL
 
     # add the first version
     my $VersionID = $Self->VersionAdd(
+        Description => '',
         %Param,
         ConfigItemID => $ConfigItemID,
         LastVersion  => {
@@ -769,7 +785,7 @@ sub ConfigItemDelete {
         ConfigItemID => $Param{ConfigItemID},
     );
 
-    # Delete all links to this config item before deleting the versions.
+    # delete all links to this config item before deleting the versions.
     # LinkDeleteAll() calls LinkDelete() internally. This means that
     # the event handlers are honored. This means that the table configitem_link
     # is also purged.
@@ -778,6 +794,34 @@ sub ConfigItemDelete {
         Key    => $Param{ConfigItemID},
         UserID => $Param{UserID},
     );
+
+    # delete dynamic link table entries, if any
+
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+    $DBObject->Do(
+        SQL  => 'DELETE FROM configitem_link WHERE source_configitem_id = ?',
+        Bind => [ \$Param{ConfigItemID} ],
+    );
+    $DBObject->Do(
+        SQL  => 'DELETE FROM configitem_link WHERE target_configitem_id = ?',
+        Bind => [ \$Param{ConfigItemID} ],
+    );
+
+    # if there are static (versioned) links, delete all of them
+    my $VersionListRef = $Self->VersionList(
+        ConfigItemID => $Param{ConfigItemID},
+    );
+
+    for my $VersionID (@$VersionListRef) {
+        $DBObject->Do(
+            SQL  => 'DELETE FROM configitem_link WHERE source_configitem_version_id = ?',
+            Bind => [ \$VersionID ],
+        );
+        $DBObject->Do(
+            SQL  => 'DELETE FROM configitem_link WHERE target_configitem_version_id = ?',
+            Bind => [ \$VersionID ],
+        );
+    }
 
     # delete existing versions
     $Self->VersionDelete(
@@ -878,14 +922,8 @@ sub ConfigItemDelete {
         UserID => $Param{UserID},
     );
 
-    # delete versions
-    $Kernel::OM->Get('Kernel::System::DB')->Do(
-        SQL  => 'DELETE FROM configitem_version WHERE configitem_id = ?',
-        Bind => [ \$Param{ConfigItemID} ],
-    );
-
     # delete config item
-    my $Success = $Kernel::OM->Get('Kernel::System::DB')->Do(
+    my $Success = $DBObject->Do(
         SQL  => 'DELETE FROM configitem WHERE id = ?',
         Bind => [ \$Param{ConfigItemID} ],
     );
@@ -972,6 +1010,8 @@ sub ConfigItemUpdate {
     my %ClassPreferences = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->GeneralCatalogPreferencesGet(
         ItemID => $ConfigItem->{ClassID},
     );
+
+    # execute name check only if name has changed
     my $NameModule = $ClassPreferences{NameModule} ? $ClassPreferences{NameModule}[0] : '';
     if ($NameModule) {
 
@@ -987,13 +1027,13 @@ sub ConfigItemUpdate {
 
         delete $Param{Name};
     }
-    else {
+    elsif ( $Param{Name} && $Param{Name} ne $ConfigItem->{Name} ) {
 
         # check, whether the feature to check for a unique name is enabled
         if ( $Kernel::OM->Get('Kernel::Config')->Get('UniqueCIName::EnableUniquenessCheck') ) {
 
             my $NameDuplicates = $Self->UniqueNameCheck(
-                ConfigItemID => 'NEW',
+                ConfigItemID => $Param{ConfigItemID},
                 ClassID      => $Param{ClassID},
                 Name         => $Param{Name},
             );
@@ -1020,10 +1060,10 @@ sub ConfigItemUpdate {
         ( $ClassPreferences{VersionTrigger} // [] )->@*;
 
     my %Changed;           # track changed values for the Event handler, e.g. for writing history
-    my $AddVersion = 0;    # flag for deciding whether a new version is created
+    my $AddVersion    = 0; # flag for deciding whether a new version is created
+    my $UpdateVersion = 0; # flag for deciding whether the current version needs an update
 
-    # name, deployment and incident state
-    # TODO: check for unique config item name, like it is done in ConfigItemAdd()
+    # check name, deployment and incident state, as well as Description
     ATTR:
     for my $Attribute (qw/Name DeplStateID InciStateID GroupID/) {
         next ATTR unless defined $Param{$Attribute};
@@ -1033,6 +1073,8 @@ sub ConfigItemUpdate {
             Old => $ConfigItem->{$Attribute},
             New => $Param{$Attribute},
         };
+
+        $UpdateVersion = 1;
 
         if ( $VersionTrigger{$Attribute} ) {
             $AddVersion = 1;
@@ -1044,7 +1086,7 @@ sub ConfigItemUpdate {
         ClassID => $ConfigItem->{ClassID},
     );
 
-    # TODO: Think about DefinitionID changes
+    my %SkipForUdateDFs;
 
     # check for changed dynamic fields to trigger versions and filter history entries
     if (@DynamicFieldNames) {
@@ -1065,14 +1107,18 @@ sub ConfigItemUpdate {
                     DynamicFieldConfig => $DynamicField,
                     Value1             => $Param{"DynamicField_$Name"},
                     Value2             => $ConfigItem->{"DynamicField_$Name"},
+                    ExternalSource     => $Param{ExternalSource},
                 )
                 )
             {
-                # pass unchanged dynamic fields to neither VersionAdd() nor VersionUpdate()
-                delete $Param{"DynamicField_$Name"};
+                # do not pass unchanged dynamic fields to VersionUpdate()
+                # store them for VersionAdd() because of potential difference from ExternalSource
+                $SkipForUdateDFs{"DynamicField_$Name"} = delete $Param{"DynamicField_$Name"};
 
                 next NAME;
             }
+
+            $UpdateVersion = 1;
 
             if ( $VersionTrigger{"DynamicField_$Name"} ) {
                 $AddVersion = 1;
@@ -1082,12 +1128,14 @@ sub ConfigItemUpdate {
 
     if ($AddVersion) {
         my $Success = $Self->VersionAdd(
+            Description => $ConfigItem->{Description} // '',
             %Param,
+            %SkipForUdateDFs,
             LastVersion => $ConfigItem,
         );
         return unless $Success;
     }
-    else {
+    elsif ($UpdateVersion) {
         my $Success = $Self->VersionUpdate(
             %Param,
             Version => $ConfigItem,
@@ -1102,7 +1150,10 @@ sub ConfigItemUpdate {
         GroupID     => 'GroupUpdate',
     );
 
+    CHANGE:
     for my $Key ( keys %Changed ) {
+        next CHANGE if !$Events{$Key};
+
         $Self->EventHandler(
             Event => $Events{$Key},
             Data  => {
@@ -1871,7 +1922,7 @@ sub CurInciStateRecalc {
         # set default incident state type
         my $CurInciStateTypeFromCIs = 'operational';
 
-        # get the unique config item ids which are direcly linked to this service
+        # get the unique config item ids which are directly linked to this service
         my %UniqueConfigItemIDs = map { $_ => 1 } @{ $ServiceCIRelation{$ServiceID} };
 
         # investigate the current incident state of each config item
