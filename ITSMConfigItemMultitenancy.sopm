@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<otobo_package version="1.0">
+    <Name>ITSMConfigItemMultitenancy</Name>
+    <Version>0.0.0</Version>
+    <Framework>11.0.x</Framework>
+    <PackageRequired Version="11.0.1">ITSMConfigurationManagement</PackageRequired>
+    <Vendor>Rother OSS GmbH</Vendor>
+    <URL>https://otobo.de/</URL>
+    <License>GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007</License>
+    <Description Lang="en">The OTOBO ITSM CMDB Package enhanced with group permissions at config item level.</Description>
+    <Filelist>    
+        <File Permission="660" Location="Custom/Kernel/GenericInterface/Operation/ConfigItem/ConfigItemUpsert.pm" />
+        <File Permission="660" Location="Custom/Kernel/Modules/AgentITSMConfigItemEdit.pm" />
+        <File Permission="660" Location="Custom/Kernel/Modules/AgentITSMConfigItemSearch.pm" />
+        <File Permission="660" Location="Custom/Kernel/Modules/AgentITSMConfigItemZoom.pm" />
+        <File Permission="660" Location="Custom/Kernel/Modules/CustomerITSMConfigItem.pm" />
+        <File Permission="660" Location="Custom/Kernel/Modules/CustomerITSMConfigItemSearch.pm" />
+        <File Permission="660" Location="Custom/Kernel/Output/HTML/Templates/Standard/AgentITSMConfigItemEdit.tt" />
+        <File Permission="660" Location="Custom/Kernel/Output/HTML/Templates/Standard/AgentITSMConfigItemZoom.tt" />
+        <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem.pm" />
+        <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem/ConfigItemSearch.pm" />
+        <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem/Event/DoHistory.pm" />
+        <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem/Permission.pm" />
+        <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem/Version.pm" />
+        <File Permission="660" Location="Kernel/Config/Files/XML/ITSMConfigItemMultitenancy.xml" />        
+        <File Permission="660" Location="Kernel/System/ITSMConfigItem/Permission/ItemGroupCheck.pm" />
+    </Filelist>
+    <DatabaseInstall Type="post">
+        <TableAlter Name="configitem">
+            <ColumnAdd Name="group_id" Type="INT" />
+            <ForeignKey ForeignTable="groups_table">
+                <Reference Local="group_id" Foreign="id" />
+            </ForeignKey>
+        </TableAlter>
+        <TableAlter Name="configitem_version">
+            <ColumnAdd Name="group_id" Type="INT" />
+            <ForeignKey ForeignTable="groups_table">
+                <Reference Local="group_id" Foreign="id" />
+            </ForeignKey>
+        </TableAlter>
+        <Insert Table="groups_table">
+            <Data Key="name" Type="Quote">itsm-configitem-manager</Data>
+            <Data Key="comments" Type="Quote">Group for ITSM ConfigItem group restrictions management.</Data>
+            <Data Key="valid_id">1</Data>
+            <Data Key="create_time">current_timestamp</Data>
+            <Data Key="create_by">1</Data>
+            <Data Key="change_time">current_timestamp</Data>
+            <Data Key="change_by">1</Data>
+        </Insert>    	
+    </DatabaseInstall>
+    
+</otobo_package>

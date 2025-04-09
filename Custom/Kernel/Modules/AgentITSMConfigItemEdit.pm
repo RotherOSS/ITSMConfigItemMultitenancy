@@ -1228,7 +1228,6 @@ sub Run {
     );
 
     # output group block
-    my %GroupList;
     my $GroupConfig;
     if ( $ClassPreferences{ConfigItemGroup} && $ClassPreferences{ConfigItemGroup}->[0] ) {
         $GroupConfig = $ClassPreferences{ConfigItemGroup}->[0];
