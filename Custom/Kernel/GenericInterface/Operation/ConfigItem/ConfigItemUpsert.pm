@@ -185,11 +185,8 @@ sub Run {
             Name  => $RemoteCIData->{Class},
         );
 
-        use Data::Dumper;
-        print STDERR Dumper $ClassPreferences;
         if ( $ClassPreferences->{ConfigItemGroup} && ref $ClassPreferences->{ConfigItemGroup} eq 'ARRAY') {
             $ItemGroupMode = $ClassPreferences->{ConfigItemGroup}[0];
-            print STDERR "ItemGroupMode = $ItemGroupMode\n";
             if ( $ItemGroupMode == 2) {
                 push @RequiredAttributes, "Group";
             }
@@ -328,9 +325,13 @@ sub Run {
             my %GroupsMapping = reverse %AuthGroups;
             $RequiredAttributes{GroupID} = $GroupsMapping{ $RemoteCIData->{Group} };
             if ( !$RequiredAttributes{GroupID} ) {
-                return $Self->Error(
-                    ErrorMessage => "Error while looking up Group '$RemoteCIData->{Group}'.",
+                return $Self->ReturnError(
+                    ErrorCode    => "$Self->{OperationName}.AccessDenied",
+                    ErrorMessage => "$Self->{OperationName}: Can not write unauthorized group to configuration item!",
                 );
+                #return $Self->Error(
+                #    ErrorMessage => "Error while looking up Group '$RemoteCIData->{Group}'.",
+                #);
             }
         }
 

@@ -25,6 +25,12 @@
         <File Permission="660" Location="Kernel/Config/Files/XML/ITSMConfigItemMultitenancy.xml" />        
         <File Permission="660" Location="Kernel/System/ITSMConfigItem/Permission/ItemGroupCheck.pm" />
     </Filelist>
+    <IntroInstall Type="post" Title="Convert legacy reference fields" Lang="en"><![CDATA[
+
+        <br/>
+        If you are using Elasticsearch, please execute the console command "Maint::Elasticsearch::Migration --target i"<br/>
+
+    ]]></IntroInstall>
     <DatabaseInstall Type="post">
         <TableAlter Name="configitem">
             <ColumnAdd Name="group_id" Type="INT" />
@@ -46,7 +52,14 @@
             <Data Key="create_by">1</Data>
             <Data Key="change_time">current_timestamp</Data>
             <Data Key="change_by">1</Data>
-        </Insert>    	
+        </Insert>
     </DatabaseInstall>
-    
+    <DatabaseUninstall Type="pre">
+        <TableAlter Name="configitem">
+            <ColumnDrop Name="group_id" />
+        </TableAlter>
+        <TableAlter Name="configitem_version">
+            <ColumnDrop Name="group_id" />
+        </TableAlter>
+    </DatabaseUninstall>
 </otobo_package>

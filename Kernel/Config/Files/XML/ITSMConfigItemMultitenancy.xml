@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<otobo_config version="2.0" init="Config">
+<otobo_config version="2.0" init="Change">
 
     <Setting Name="ITSMConfigItemManagementGroup" Required="0" Valid="1">
         <Description Translatable="1">Management group that exempts from any config item level group restrictions.</Description>
@@ -31,33 +31,6 @@
             </Hash>
         </Value>
     </Setting>    
-    <Setting Name="GeneralCatalogPreferences###VersionTrigger" Required="0" Valid="1">
-        <Description Translatable="1">Parameters for the version trigger for config item classes in the preferences view of the agent interface.</Description>
-        <Navigation>Core::GeneralCatalog</Navigation>
-        <Value>
-            <Hash>
-                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::Generic</Item>
-                <Item Key="Class">ITSM::ConfigItem::Class</Item>
-                <Item Key="Label" Translatable="1">Version Trigger</Item>
-                <Item Key="Priority">70</Item>
-                <Item Key="Desc" Translatable="1">Choose attributes to trigger the creation of a new version.</Item>
-                <Item Key="Data">
-                    <Hash>
-                        <Item Key="Name" Translatable="1">Name</Item>
-                        <Item Key="DeplStateID" Translatable="1">DeploymentState</Item>
-                        <Item Key="InciStateID" Translatable="1">IncidentState</Item>
-                        <Item Key="DefinitionUpdate" Translatable="1">Definition Update</Item>
-                        <!-- HERE -->
-                        <Item Key="GroupID" Translatable="1">Group</Item>
-                    </Hash>
-                </Item>
-                <Item Key="PrefKey">VersionTrigger</Item>
-                <Item Key="Block">ConfigItemVersionTrigger</Item>
-                <Item Key="Mandatory" ValueType="Checkbox">0</Item>
-                <Item Key="Multiple" ValueType="Checkbox">1</Item>
-            </Hash>
-        </Value>
-    </Setting>
     <Setting Name="ITSMConfigItem::Permission::Item###010-ItemGroupCheck" Required="0" Valid="1">
         <Description Translatable="1">Module to check the group responsible for an individual instance of a configuration item.</Description>
         <Navigation>Core::ITSMConfigItem</Navigation>
@@ -66,6 +39,59 @@
                 <Item Key="Module">Kernel::System::ITSMConfigItem::Permission::ItemGroupCheck</Item>
                 <Item Key="Required">0</Item>
                 <Item Key="Granted">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <!-- Override these original ITSMConfigItem settings to insert the GroupUpdate event -->
+    <Setting Name="ITSMConfigItem::EventModulePost###100-History" Required="0" Valid="1">
+        <Description Translatable="1">Config item event module that enables logging to history in the agent interface.</Description>
+        <Navigation>Core::Event::ITSMConfigItem</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::System::ITSMConfigItem::Event::DoHistory</Item>
+                <Item Key="Event">(ConfigItemCreate|VersionCreate|DeploymentStateUpdate|IncidentStateUpdate|GroupUpdate|ConfigItemDelete|LinkAdd|LinkDelete|DefinitionUpdate|NameUpdate|ValueUpdate|VersionDelete|AttachmentAddPost|AttachmentDeletePost|ConfigItemDynamicField)</Item>
+                <Item Key="Transaction">0</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Events###ITSMConfigItem" Required="0" Valid="1">
+        <Description Translatable="1">List of all Package events to be displayed in the GUI.</Description>
+        <Navigation>Frontend::Admin</Navigation>
+        <Value>
+            <Array>
+                <Item>ConfigItemCreate</Item>
+                <Item>VersionCreate</Item>
+                <Item>DeploymentStateUpdate</Item>
+                <Item>IncidentStateUpdate</Item>
+                <Item>GroupUpdate</Item>
+                <Item>ConfigItemDelete</Item>
+                <Item>ValueUpdate</Item>
+                <Item>NameUpdate</Item>
+                <Item>AttachmentAddPost</Item>
+                <Item>AttachmentDeletePost</Item>
+                <Item>VersionDelete</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Elasticsearch::ConfigItemStoreFields" Required="0" Valid="0" ConfigLevel="100">
+        <Description Translatable="1">Fields stored in the configuration item index which are used for other things besides fulltext searches. For the complete functionality all fields are mandatory.</Description>
+        <Navigation>Core::Elasticsearch::Settings</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Basic">
+                    <Array>
+                        <Item>ConfigItemID</Item>
+                        <Item>ClassID</Item>
+                        <Item>Class</Item>
+                        <Item>Number</Item>
+                        <Item>GroupID</Item>
+                    </Array>
+                </Item>
+                <Item Key="DynamicField">
+                    <Array>
+                    </Array>
+                </Item>
             </Hash>
         </Value>
     </Setting>
