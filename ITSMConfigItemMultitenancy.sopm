@@ -17,13 +17,15 @@
         <File Permission="660" Location="Custom/Kernel/Modules/CustomerITSMConfigItemSearch.pm" />
         <File Permission="660" Location="Custom/Kernel/Output/HTML/Templates/Standard/AgentITSMConfigItemEdit.tt" />
         <File Permission="660" Location="Custom/Kernel/Output/HTML/Templates/Standard/AgentITSMConfigItemZoom.tt" />
+        <File Permission="660" Location="Custom/Kernel/System/Console/Command/Maint/Elasticsearch/Migration.pm" />
+        <File Permission="660" Location="Custom/Kernel/System/Elasticsearch.pm" />        
         <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem.pm" />
         <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem/ConfigItemSearch.pm" />
         <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem/Event/DoHistory.pm" />
         <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem/Permission.pm" />
         <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem/Version.pm" />
         <File Permission="660" Location="Kernel/Config/Files/XML/ITSMConfigItemMultitenancy.xml" />        
-        <File Permission="660" Location="Kernel/System/ITSMConfigItem/Permission/ItemGroupCheck.pm" />
+        <File Permission="660" Location="Kernel/System/ITSMConfigItem/Permission/ItemGroupCheck.pm" />        
     </Filelist>
     <IntroInstall Type="post" Title="Convert legacy reference fields" Lang="en"><![CDATA[
 
