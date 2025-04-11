@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2024 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -119,21 +119,21 @@ sub Run {
         for my $Menu ( sort keys %Menus ) {
 
             # load module
-            if ( $Kernel::OM->Get('Kernel::System::Main')->Require( $Menus{$Menu}->{Module} ) ) {
+            if ( $Kernel::OM->Get('Kernel::System::Main')->Require( $Menus{$Menu}{Module} ) ) {
 
-                my $Object = $Menus{$Menu}->{Module}->new(
+                my $Object = $Menus{$Menu}{Module}->new(
                     %{$Self},
                     ConfigItemID => $Self->{ConfigItemID},
                 );
 
                 # set classes
-                if ( $Menus{$Menu}->{Target} ) {
+                if ( $Menus{$Menu}{Target} ) {
 
-                    if ( $Menus{$Menu}->{Target} eq 'PopUp' ) {
-                        $Menus{$Menu}->{MenuClass} = 'AsPopup';
+                    if ( $Menus{$Menu}{Target} eq 'PopUp' ) {
+                        $Menus{$Menu}{MenuClass} = 'AsPopup';
                     }
-                    elsif ( $Menus{$Menu}->{Target} eq 'Back' ) {
-                        $Menus{$Menu}->{MenuClass} = 'HistoryBack';
+                    elsif ( $Menus{$Menu}{Target} eq 'Back' ) {
+                        $Menus{$Menu}{MenuClass} = 'HistoryBack';
                     }
 
                 }
@@ -390,9 +390,9 @@ sub Run {
     my %ClassPreferences = $GeneralCatalogObject->GeneralCatalogPreferencesGet(
         ItemID => $ConfigItem->{ClassID},
     );
-    if ($ClassPreferences{ConfigItemGroup} && $ClassPreferences{ConfigItemGroup}->[0]) {
+    if ( $ClassPreferences{ConfigItemGroup} && $ClassPreferences{ConfigItemGroup}[0] ) {
         my $GroupObject = $Kernel::OM->Get('Kernel::System::Group');
-        my %Groups = $GroupObject->GroupList(
+        my %Groups      = $GroupObject->GroupList(
             Valid => 1,
         );
         $LayoutObject->Block(

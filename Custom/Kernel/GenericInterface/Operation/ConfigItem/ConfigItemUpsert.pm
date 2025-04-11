@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2024 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -135,7 +135,7 @@ sub Run {
 
     # check needed stuff
     for my $Needed (qw(ConfigItem)) {
-        if ( !$Param{Data}->{$Needed} ) {
+        if ( !$Param{Data}{$Needed} ) {
             return $Self->ReturnError(
                 ErrorCode    => "$Self->{OperationName}.MissingParameter",
                 ErrorMessage => "$Self->{OperationName}: $Needed parameter is missing!",
@@ -146,9 +146,9 @@ sub Run {
     # check optional array/hashes
     for my $Optional (qw(DynamicField Attachment)) {
         if (
-            defined $Param{Data}->{$Optional}
-            && !IsHashRefWithData( $Param{Data}->{$Optional} )
-            && !IsArrayRefWithData( $Param{Data}->{$Optional} )
+            defined $Param{Data}{$Optional}
+            && !IsHashRefWithData( $Param{Data}{$Optional} )
+            && !IsArrayRefWithData( $Param{Data}{$Optional} )
             )
         {
             return $Self->ReturnError(
@@ -158,8 +158,8 @@ sub Run {
         }
     }
 
-    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-    my $GroupObject = $Kernel::OM->Get('Kernel::System::Group');
+    my $ConfigObject         = $Kernel::OM->Get('Kernel::Config');
+    my $GroupObject          = $Kernel::OM->Get('Kernel::System::Group');
     my $GeneralCatalogObject = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
 
     my $ErrorMessage = '';
@@ -185,12 +185,12 @@ sub Run {
             Name  => $RemoteCIData->{Class},
         );
 
-        if ( $ClassPreferences->{ConfigItemGroup} && ref $ClassPreferences->{ConfigItemGroup} eq 'ARRAY') {
+        if ( $ClassPreferences->{ConfigItemGroup} && ref $ClassPreferences->{ConfigItemGroup} eq 'ARRAY' ) {
             $ItemGroupMode = $ClassPreferences->{ConfigItemGroup}[0];
-            if ( $ItemGroupMode == 2) {
+            if ( $ItemGroupMode == 2 ) {
                 push @RequiredAttributes, "Group";
             }
-            elsif ( $ItemGroupMode == 0) {
+            elsif ( $ItemGroupMode == 0 ) {
                 return $Self->ReturnError(
                     ErrorCode    => "$Self->{OperationName}.ItemGroupIsDisabled",
                     ErrorMessage => "$Self->{OperationName}: No group should be assigned because item group permissions are disabled for the class!",
@@ -215,9 +215,9 @@ sub Run {
     );
 
     # get operation config
-    my $OperationConfig = $Webservice->{Config}->{Provider}->{Operation}->{ $Self->{Operation} };
+    my $OperationConfig = $Webservice->{Config}{Provider}{Operation}{ $Self->{Operation} };
 
-    my $ConfigItemObject     = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
 
     my %CIClassMapping = (
         IncidentState   => 'ITSM::Core::IncidentState',
@@ -307,14 +307,14 @@ sub Run {
         # get ID for the Group
         # users from the itsm management group can assign the CI to any group, others can assign only to one of their groups
         # attempting to assign a non authorized group returns the same result as assigning a non existing group
-        if ($RemoteCIData->{Group}) {
+        if ( $RemoteCIData->{Group} ) {
             my %AuthGroups;
             my $ManagementGroup = $ConfigObject->Get("ITSMConfigItemManagementGroup");
-            my %UserGroupsList = $GroupObject->PermissionUserGroupGet(
+            my %UserGroupsList  = $GroupObject->PermissionUserGroupGet(
                 UserID => $UserID,
-                Type => "ro",
+                Type   => "ro",
             );
-            if ( $ManagementGroup && grep { $_ eq $ManagementGroup } values %UserGroupsList) {
+            if ( $ManagementGroup && grep { $_ eq $ManagementGroup } values %UserGroupsList ) {
                 %AuthGroups = $GroupObject->GroupList(
                     Valid => 1,
                 );
@@ -329,6 +329,7 @@ sub Run {
                     ErrorCode    => "$Self->{OperationName}.AccessDenied",
                     ErrorMessage => "$Self->{OperationName}: Can not write unauthorized group to configuration item!",
                 );
+
                 #return $Self->Error(
                 #    ErrorMessage => "Error while looking up Group '$RemoteCIData->{Group}'.",
                 #);
@@ -436,7 +437,7 @@ sub Run {
                 Scope  => 'Item',
                 ItemID => $ConfigItemID,
                 UserID => $UserID,
-                Type   => $Self->{Config}->{Permission},
+                Type   => $Self->{Config}{Permission},
             );
         }
         else {
@@ -444,7 +445,7 @@ sub Run {
                 Scope   => 'Class',
                 ClassID => $RequiredAttributes{ClassID},
                 UserID  => $UserID,
-                Type    => $Self->{Config}->{Permission},
+                Type    => $Self->{Config}{Permission},
             );
         }
 

@@ -251,7 +251,7 @@ sub TicketSearch {
                         CustomerIDs => \@MergedCustomerIDs,
                     };
                 }
-                push @{ $CustomerIDCombinations{$CustomerIDString}->{GroupIDs} }, $GroupID;
+                push @{ $CustomerIDCombinations{$CustomerIDString}{GroupIDs} }, $GroupID;
             }
 
             # add to query combinations
@@ -600,8 +600,8 @@ sub ConfigItemSearch {
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
     my $GroupObject  = $Kernel::OM->Get('Kernel::System::Group');
 
-    my $ResultType   = $Param{Result} || 'ARRAY';
-    my $Limit        = $Param{Limit}  || 10000;
+    my $ResultType = $Param{Result} || 'ARRAY';
+    my $Limit      = $Param{Limit}  || 10000;
 
     # check required params
     for my $Needed (qw/UserID Fulltext/) {
@@ -654,10 +654,10 @@ sub ConfigItemSearch {
     my %GroupList;
     my %AuthGroupsList = $GroupObject->PermissionUserGroupGet(
         UserID => $Self->{UserID},
-        Type => "ro",
+        Type   => "ro",
     );
     my $ManagementGroup = $ConfigObject->Get("ITSMConfigItemManagementGroup");
-    if ( $ManagementGroup && grep { $_ eq $ManagementGroup } values %AuthGroupsList) {
+    if ( $ManagementGroup && grep { $_ eq $ManagementGroup } values %AuthGroupsList ) {
         %GroupList = $GroupObject->GroupList(
             Valid => 1,
         );

@@ -1059,9 +1059,9 @@ sub ConfigItemUpdate {
         { $_ => 1 }
         ( $ClassPreferences{VersionTrigger} // [] )->@*;
 
-    my %Changed;           # track changed values for the Event handler, e.g. for writing history
-    my $AddVersion    = 0; # flag for deciding whether a new version is created
-    my $UpdateVersion = 0; # flag for deciding whether the current version needs an update
+    my %Changed;              # track changed values for the Event handler, e.g. for writing history
+    my $AddVersion    = 0;    # flag for deciding whether a new version is created
+    my $UpdateVersion = 0;    # flag for deciding whether the current version needs an update
 
     # check name, deployment and incident state, as well as Description
     ATTR:
@@ -1366,9 +1366,9 @@ sub ConfigItemAttachmentGet {
         %AttachmentData,
         Filename    => $Param{Filename},
         Content     => ${ $AttachmentData{Content} },
-        ContentType => $AttachmentData{Preferences}->{ContentType},
+        ContentType => $AttachmentData{Preferences}{ContentType},
         Type        => 'attachment',
-        Filesize    => $AttachmentData{Preferences}->{FilesizeRaw},
+        Filesize    => $AttachmentData{Preferences}{FilesizeRaw},
     };
 
     return $AttachmentInfo;
@@ -1488,8 +1488,8 @@ sub ConfigItemLookup {
     }
 
     # if result is cached return that result
-    return $Self->{Cache}->{ConfigItemLookup}->{$Key}->{ $Param{$Key} }
-        if $Self->{Cache}->{ConfigItemLookup}->{$Key}->{ $Param{$Key} };
+    return $Self->{Cache}{ConfigItemLookup}{$Key}{ $Param{$Key} }
+        if $Self->{Cache}{ConfigItemLookup}{$Key}{ $Param{$Key} };
 
     # set the appropriate SQL statement
     my $SQL = $Key eq 'ConfigItemNumber'
@@ -1510,7 +1510,7 @@ sub ConfigItemLookup {
         $Value = $Row[0];
     }
 
-    $Self->{Cache}->{ConfigItemLookup}->{$Key}->{ $Param{$Key} } = $Value;
+    $Self->{Cache}{ConfigItemLookup}{$Key}{ $Param{$Key} } = $Value;
 
     return $Value;
 }
@@ -1756,16 +1756,16 @@ sub CurInciStateRecalc {
 
             # Skip config items known from previous execution(s).
             if (
-                IsStringWithData( $KnownScannedConfigItemIDs->{$ConfigItemID}->{Type} )
+                IsStringWithData( $KnownScannedConfigItemIDs->{$ConfigItemID}{Type} )
                 &&
-                $KnownScannedConfigItemIDs->{$ConfigItemID}->{Type} eq $Param{ScannedConfigItemIDs}->{$ConfigItemID}->{Type}
+                $KnownScannedConfigItemIDs->{$ConfigItemID}{Type} eq $Param{ScannedConfigItemIDs}{$ConfigItemID}{Type}
                 )
             {
                 next CONFIGITEMID;
             }
 
             # investigate only config items with an incident state
-            next CONFIGITEMID unless $Param{ScannedConfigItemIDs}->{$ConfigItemID}->{Type} eq 'incident';
+            next CONFIGITEMID unless $Param{ScannedConfigItemIDs}{$ConfigItemID}{Type} eq 'incident';
 
             # annotate linked config items with a warning
             $Self->_FindWarnConfigItems(
@@ -1782,16 +1782,16 @@ sub CurInciStateRecalc {
 
             # Skip config items known from previous execution(s).
             if (
-                IsStringWithData( $KnownScannedConfigItemIDs->{$ConfigItemID}->{Type} )
+                IsStringWithData( $KnownScannedConfigItemIDs->{$ConfigItemID}{Type} )
                 &&
-                $KnownScannedConfigItemIDs->{$ConfigItemID}->{Type} eq $Param{ScannedConfigItemIDs}->{$ConfigItemID}->{Type}
+                $KnownScannedConfigItemIDs->{$ConfigItemID}{Type} eq $Param{ScannedConfigItemIDs}{$ConfigItemID}{Type}
                 )
             {
                 next CONFIGITEMID;
             }
 
             # extract incident state type
-            my $InciStateType = $Param{ScannedConfigItemIDs}->{$ConfigItemID}->{Type};
+            my $InciStateType = $Param{ScannedConfigItemIDs}{$ConfigItemID}{Type};
 
             # Find all linked services of this config item.
             # These kind of links are not available from the table configitem_link
@@ -1814,7 +1814,7 @@ sub CurInciStateRecalc {
 
             next CONFIGITEMID if $InciStateType eq 'incident';
 
-            $Param{NewConfigItemIncidentState}->{$ConfigItemID} = $InciStateType;
+            $Param{NewConfigItemIncidentState}{$ConfigItemID} = $InciStateType;
         }
     }
 
@@ -1845,14 +1845,14 @@ sub CurInciStateRecalc {
         # Skip config items known from previous execution(s).
         if (
             IsStringWithData( $KnownNewConfigItemIncidentState->{$ConfigItemID} )
-            && $KnownNewConfigItemIncidentState->{$ConfigItemID} eq $Param{NewConfigItemIncidentState}->{$ConfigItemID}
+            && $KnownNewConfigItemIncidentState->{$ConfigItemID} eq $Param{NewConfigItemIncidentState}{$ConfigItemID}
             )
         {
             next CONFIGITEMID;
         }
 
         # get new incident state type (can only be 'operational' or 'warning')
-        my $InciStateType = $Param{NewConfigItemIncidentState}->{$ConfigItemID};
+        my $InciStateType = $Param{NewConfigItemIncidentState}{$ConfigItemID};
 
         # get last version
         my $LastVersion = $Self->ConfigItemGet(
@@ -2062,10 +2062,10 @@ sub _FindInciConfigItems {
     return unless $Param{ConfigItemID};
 
     # ignore already scanned ids (infinite loop protection)
-    return if $Param{ScannedConfigItemIDs}->{ $Param{ConfigItemID} };
+    return if $Param{ScannedConfigItemIDs}{ $Param{ConfigItemID} };
 
     # set a default so the ConfigITem won't be scanned again
-    $Param{ScannedConfigItemIDs}->{ $Param{ConfigItemID} }->{Type} = 'operational';
+    $Param{ScannedConfigItemIDs}{ $Param{ConfigItemID} }->{Type} = 'operational';
 
     # add own config item id to list of linked config items
     my @ConfigItemIDs = $Param{ConfigItemID};
@@ -2100,7 +2100,7 @@ sub _FindInciConfigItems {
 
         # When an incident was found, mark the config item and stop recursing
         if ( $ConfigItem->{CurInciStateType} eq 'incident' ) {
-            $Param{ScannedConfigItemIDs}->{$ConfigItemID}->{Type} = 'incident';
+            $Param{ScannedConfigItemIDs}{$ConfigItemID}{Type} = 'incident';
 
             next CONFIGITEMID;
         }
@@ -2141,19 +2141,19 @@ sub _FindWarnConfigItems {
     # Ignore already scanned ids.
     # It is ok that a config item is investigated as many times as there are configured link types * number of incident config iteems
     my $IncidentCount = true
-    { ( $Param{ScannedConfigItemIDs}->{$_}->{Type} || '' ) eq 'incident' }
+    { ( $Param{ScannedConfigItemIDs}{$_}{Type} || '' ) eq 'incident' }
     keys $Param{ScannedConfigItemIDs}->%*;
     if (
-        $Param{ScannedConfigItemIDs}->{ $Param{ConfigItemID} }->{FindWarn}
+        $Param{ScannedConfigItemIDs}{ $Param{ConfigItemID} }->{FindWarn}
         &&
-        $Param{ScannedConfigItemIDs}->{ $Param{ConfigItemID} }->{FindWarn} >= ( $Param{NumberOfLinkTypes} * $IncidentCount )
+        $Param{ScannedConfigItemIDs}{ $Param{ConfigItemID} }->{FindWarn} >= ( $Param{NumberOfLinkTypes} * $IncidentCount )
         )
     {
         return;
     }
 
     # increase the visit counter
-    $Param{ScannedConfigItemIDs}->{ $Param{ConfigItemID} }->{FindWarn}++;
+    $Param{ScannedConfigItemIDs}{ $Param{ConfigItemID} }->{FindWarn}++;
 
     # find config items to which the incident or warning must be propagated
     my $LinkedConfigItems = $Self->LinkedConfigItems(
@@ -2176,10 +2176,10 @@ sub _FindWarnConfigItems {
             ScannedConfigItemIDs => $Param{ScannedConfigItemIDs},
         );
 
-        next CONFIGITEMID if ( $Param{ScannedConfigItemIDs}->{$ConfigItemID}->{Type} || '' ) eq 'incident';
+        next CONFIGITEMID if ( $Param{ScannedConfigItemIDs}{$ConfigItemID}{Type} || '' ) eq 'incident';
 
         # set warning state
-        $Param{ScannedConfigItemIDs}->{$ConfigItemID}->{Type} = 'warning';
+        $Param{ScannedConfigItemIDs}{$ConfigItemID}{Type} = 'warning';
     }
 
     return 1;

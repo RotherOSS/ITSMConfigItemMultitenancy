@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2024 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -384,12 +384,12 @@ sub Run {
             $SearchConfig{InciStates} = \@SearchInciStates;
         }
 
-        my $CustomerGroupObject = $Kernel::OM->Get('Kernel::System::CustomerGroup');
+        my $CustomerGroupObject  = $Kernel::OM->Get('Kernel::System::CustomerGroup');
         my %AuthorizedGroupsHash = $CustomerGroupObject->GroupMemberList(
-                UserID => $Self->{UserID},
-                Type   => 'ro',
-                Result => 'HASH',
-            );
+            UserID => $Self->{UserID},
+            Type   => 'ro',
+            Result => 'HASH',
+        );
         my @AuthorizedGroupIDs = keys %AuthorizedGroupsHash;
         $SearchConfig{GroupIDs} = \@AuthorizedGroupIDs;
 
@@ -585,24 +585,24 @@ sub Run {
         if ( $Config->{Defaults} ) {
             KEY:
             for my $Key ( sort keys %{ $Config->{Defaults} } ) {
-                next KEY if !$Config->{Defaults}->{$Key};
+                next KEY if !$Config->{Defaults}{$Key};
                 next KEY if $Key eq 'DynamicField';
 
                 if ( $Key =~ /^ConfigItem(Create|Change)/ ) {
-                    my @Items = split /;/, $Config->{Defaults}->{$Key};
+                    my @Items = split /;/, $Config->{Defaults}{$Key};
                     for my $Item (@Items) {
                         my ( $Key, $Value ) = split /=/, $Item;
                         $Defaults{$Key} = $Value;
                     }
                 }
                 else {
-                    $Defaults{$Key} = $Config->{Defaults}->{$Key};
+                    $Defaults{$Key} = $Config->{Defaults}{$Key};
                 }
             }
         }
 
         # generate dropdown for selecting the permission condition
-        my %PermissionConditionData = map { int($_) => $PermissionConditionConfigs->{$_}->{Name} } keys $PermissionConditionConfigs->%*;
+        my %PermissionConditionData = map { int($_) => $PermissionConditionConfigs->{$_}{Name} } keys $PermissionConditionConfigs->%*;
         my $PermissionConditionStrg = $LayoutObject->BuildSelection(
             Data        => \%PermissionConditionData,
             Name        => 'PermissionCondition',

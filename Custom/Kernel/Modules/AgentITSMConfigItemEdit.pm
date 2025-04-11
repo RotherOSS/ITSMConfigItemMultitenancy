@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2024 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -73,7 +73,7 @@ sub Run {
             Scope  => 'Item',
             ItemID => $ConfigItem->{ConfigItemID},
             UserID => $Self->{UserID},
-            Type   => $Self->{Config}->{Permission},
+            Type   => $Self->{Config}{Permission},
         );
 
         # get config item
@@ -99,7 +99,7 @@ sub Run {
             Scope  => 'Item',
             ItemID => $ConfigItem->{ConfigItemID},
             UserID => $Self->{UserID},
-            Type   => $Self->{Config}->{Permission},
+            Type   => $Self->{Config}{Permission},
         );
 
         # set config item id and number
@@ -117,7 +117,7 @@ sub Run {
             Scope   => 'Class',
             ClassID => $ConfigItem->{ClassID},
             UserID  => $Self->{UserID},
-            Type    => $Self->{Config}->{Permission},
+            Type    => $Self->{Config}{Permission},
         );
 
         # get class list
@@ -887,7 +887,7 @@ sub Run {
                         Name        => $Name . '_' . $i,
                         Data        => $DataValues,
                         SelectedID  => $GetParam{DynamicField}{"DynamicField_$Name"}[$i],
-                        Translation => $DynamicFieldConfig->{Config}->{TranslatableValues} || 0,
+                        Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
                         Max         => 100,
                     };
                 }
@@ -912,7 +912,7 @@ sub Run {
                 Name        => 'DynamicField_' . $Name,
                 Data        => $DataValues,
                 SelectedID  => $GetParam{DynamicField}{"DynamicField_$Name"},
-                Translation => $DynamicFieldConfig->{Config}->{TranslatableValues} || 0,
+                Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
                 Max         => 100,
             };
         }
@@ -943,7 +943,7 @@ sub Run {
                             Name        => 'DynamicField_' . $FrontendName . "_$i",
                             Data        => $DataValues,
                             SelectedID  => $SetField->{Values}{$FrontendName}[$i],
-                            Translation => $DynamicFieldConfig->{Config}->{TranslatableValues} || 0,
+                            Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
                             Max         => 100,
                         };
                     }
@@ -968,7 +968,7 @@ sub Run {
                     Name        => 'DynamicField_' . $FrontendName,
                     Data        => $DataValues,
                     SelectedID  => $SetField->{Values}{$FrontendName},
-                    Translation => $DynamicFieldConfig->{Config}->{TranslatableValues} || 0,
+                    Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
                     Max         => 100,
                 };
             }
@@ -1229,17 +1229,17 @@ sub Run {
 
     # output group block
     my $GroupConfig;
-    if ( $ClassPreferences{ConfigItemGroup} && $ClassPreferences{ConfigItemGroup}->[0] ) {
-        $GroupConfig = $ClassPreferences{ConfigItemGroup}->[0];
+    if ( $ClassPreferences{ConfigItemGroup} && $ClassPreferences{ConfigItemGroup}[0] ) {
+        $GroupConfig = $ClassPreferences{ConfigItemGroup}[0];
     }
     if ($GroupConfig) {
         my $GroupList;
         my %AuthGroupsList = $GroupObject->PermissionUserGroupGet(
             UserID => $Self->{UserID},
-            Type => "ro",
+            Type   => "ro",
         );
         my $ManagementGroup = $ConfigObject->Get("ITSMConfigItemManagementGroup");
-        if ( $ManagementGroup && grep { $_ eq $ManagementGroup } values %AuthGroupsList) {
+        if ( $ManagementGroup && grep { $_ eq $ManagementGroup } values %AuthGroupsList ) {
             my %AllGroupsList = $GroupObject->GroupList(
                 Valid => 1,
             );
@@ -1248,7 +1248,7 @@ sub Run {
         else {
             $GroupList = \%AuthGroupsList;
         }
-        
+
         # output group invalid block
         my $RowGroupInvalid = '';
         if ( $GroupConfig == 2 && !$ConfigItem->{GroupID} && $Self->{Subaction} eq 'Save' ) {
@@ -1271,11 +1271,12 @@ sub Run {
             Name => 'RowGroup',
             Data => {
                 GroupOptionStrg => $GroupOptionStrg,
-                MandatoryClass => $GroupConfig == 2 ? 'Mandatory' : '',
-                Marker => $GroupConfig == 2 ? '*' : '',
+                MandatoryClass  => $GroupConfig == 2 ? 'Mandatory' : '',
+                Marker          => $GroupConfig == 2 ? '*'         : '',
             },
         );
     }
+
     # generate base url
     my $URL = "Action=PictureUpload;FormID=$Self->{FormID};ContentID=";
 
@@ -1580,7 +1581,7 @@ sub Run {
         # check for access rights
         for my $ClassID ( sort keys %{$ClassList} ) {
             my $HasAccess = $ConfigItemObject->Permission(
-                Type    => $Self->{Config}->{Permission},
+                Type    => $Self->{Config}{Permission},
                 Scope   => 'Class',
                 ClassID => $ClassID,
                 UserID  => $Self->{UserID},

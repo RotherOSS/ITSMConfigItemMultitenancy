@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2024 Rother OSS GmbH, https://otobo.de/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -20,6 +20,7 @@ use strict;
 use warnings;
 
 our @ObjectDependencies = (
+    'Kernel::Config',
     'Kernel::System::GeneralCatalog',
     'Kernel::System::Group',
     'Kernel::System::ITSMConfigItem',
@@ -28,7 +29,7 @@ our @ObjectDependencies = (
 
 =head1 NAME
 
-Kernel::System::ITSMConfigItem::Permission::ItemClassGroupCheck - check if a user can access an item
+Kernel::System::ITSMConfigItem::Permission::ItemGroupCheck - check if a user can access an item
 
 =head1 DESCRIPTION
 
@@ -112,7 +113,7 @@ sub Run {
     #}
 
     # looking for group id, grant access if user is in group or is a member of the ci management group
-    for my $GroupID (keys %Groups) {
+    for my $GroupID ( keys %Groups ) {
         return 1 if $Groups{$GroupID} eq $ItemManagementGroup || $GroupID eq $ItemPermission;
     }
 

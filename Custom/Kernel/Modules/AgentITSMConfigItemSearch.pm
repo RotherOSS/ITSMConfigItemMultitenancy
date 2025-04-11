@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2024 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -62,12 +62,12 @@ sub Run {
 
     # get config data
     $Self->{StartHit}    = int( $ParamObject->GetParam( Param => 'StartHit' ) || 1 );
-    $Self->{SearchLimit} = $Self->{Config}->{SearchLimit} || 10000;
+    $Self->{SearchLimit} = $Self->{Config}{SearchLimit} || 10000;
     $Self->{SortBy}      = $ParamObject->GetParam( Param => 'SortBy' )
-        || $Self->{Config}->{'SortBy::Default'}
+        || $Self->{Config}{'SortBy::Default'}
         || 'Number';
     $Self->{OrderBy} = $ParamObject->GetParam( Param => 'OrderBy' )
-        || $Self->{Config}->{'Order::Default'}
+        || $Self->{Config}{'Order::Default'}
         || 'Down';
     $Self->{Profile}        = $ParamObject->GetParam( Param => 'Profile' )     || '';
     $Self->{SaveProfile}    = $ParamObject->GetParam( Param => 'SaveProfile' ) || '';
@@ -81,7 +81,7 @@ sub Run {
     # check for access rights on the classes
     for my $ClassID ( sort keys %{$ClassList} ) {
         my $HasAccess = $ConfigItemObject->Permission(
-            Type    => $Self->{Config}->{Permission},
+            Type    => $Self->{Config}{Permission},
             Scope   => 'Class',
             ClassID => $ClassID,
             UserID  => $Self->{UserID},
@@ -146,18 +146,18 @@ sub Run {
             if ( $Self->{Config}{Defaults} ) {
                 KEY:
                 for my $Key ( sort keys %{ $Self->{Config}{Defaults} } ) {
-                    next KEY if !$Self->{Config}{Defaults}->{$Key};
+                    next KEY if !$Self->{Config}{Defaults}{$Key};
                     next KEY if $Key eq 'DynamicField';
 
                     if ( $Key =~ /^(ConfigItem)(Create|Change)/ ) {
-                        my @Items = split /;/, $Self->{Config}{Defaults}->{$Key};
+                        my @Items = split /;/, $Self->{Config}{Defaults}{$Key};
                         for my $Item (@Items) {
                             my ( $Key, $Value ) = split /=/, $Item;
                             $GetParam{$Key} ||= $Value;
                         }
                     }
                     else {
-                        $GetParam{$Key} ||= $Self->{Config}{Defaults}->{$Key};
+                        $GetParam{$Key} ||= $Self->{Config}{Defaults}{$Key};
                     }
                 }
             }
@@ -260,18 +260,18 @@ sub Run {
 
             KEY:
             for my $Key ( sort keys %{ $Self->{Config}{Defaults} } ) {
-                next KEY if !$Self->{Config}{Defaults}->{$Key};
+                next KEY if !$Self->{Config}{Defaults}{$Key};
                 next KEY if $Key eq 'DynamicField';
 
                 if ( $Key =~ /^(ConfigItem)(Create|Change)/ ) {
-                    my @Items = split /;/, $Self->{Config}{Defaults}->{$Key};
+                    my @Items = split /;/, $Self->{Config}{Defaults}{$Key};
                     for my $Item (@Items) {
                         my ( $Key, $Value ) = split /=/, $Item;
                         $GetParam{$Key} ||= $Value;
                     }
                 }
                 else {
-                    $GetParam{$Key} ||= $Self->{Config}{Defaults}->{$Key};
+                    $GetParam{$Key} ||= $Self->{Config}{Defaults}{$Key};
                 }
             }
         }
@@ -326,7 +326,7 @@ sub Run {
 
         # check if user is allowed to search class
         my $HasAccess = $ConfigItemObject->Permission(
-            Type    => $Self->{Config}->{Permission},
+            Type    => $Self->{Config}{Permission},
             Scope   => 'Class',
             ClassID => $ClassID,
             UserID  => $Self->{UserID},
@@ -345,18 +345,18 @@ sub Run {
 
             KEY:
             for my $Key ( sort keys %{ $Self->{Config}{Defaults} } ) {
-                next KEY if !$Self->{Config}{Defaults}->{$Key};
+                next KEY if !$Self->{Config}{Defaults}{$Key};
                 next KEY if $Key eq 'DynamicField';
 
                 if ( $Key =~ /^(ConfigItem)(Create|Change)/ ) {
-                    my @Items = split /;/, $Self->{Config}{Defaults}->{$Key};
+                    my @Items = split /;/, $Self->{Config}{Defaults}{$Key};
                     for my $Item (@Items) {
                         my ( $Key, $Value ) = split /=/, $Item;
                         $GetParam{$Key} ||= $Value;
                     }
                 }
                 else {
-                    $GetParam{$Key} ||= $Self->{Config}{Defaults}->{$Key};
+                    $GetParam{$Key} ||= $Self->{Config}{Defaults}{$Key};
                 }
             }
 
@@ -727,7 +727,7 @@ sub Run {
             # Merge regular show/hide settings and the settings for the dynamic fields
             my %Defaults = %{ $Self->{Config}{Defaults} || {} };
             for my $DynamicFields ( sort keys %{ $Self->{Config}{DynamicField} || {} } ) {
-                if ( $Self->{Config}{DynamicField}->{$DynamicFields} == 2 ) {
+                if ( $Self->{Config}{DynamicField}{$DynamicFields} == 2 ) {
                     $Defaults{"Search_DynamicField_$DynamicFields"} = 1;
                 }
             }
@@ -853,7 +853,7 @@ sub Run {
 
         # check if user is allowed to search class
         my $HasAccess = $ConfigItemObject->Permission(
-            Type    => $Self->{Config}->{Permission},
+            Type    => $Self->{Config}{Permission},
             Scope   => 'Class',
             ClassID => $ClassID,
             UserID  => $Self->{UserID},
@@ -1024,7 +1024,7 @@ sub Run {
                     Scope  => 'Item',
                     ItemID => $ConfigItemID,
                     UserID => $Self->{UserID},
-                    Type   => $Self->{Config}->{Permission},
+                    Type   => $Self->{Config}{Permission},
                 );
 
                 next CONFIGITEMID if !$HasAccess;
@@ -1037,7 +1037,7 @@ sub Run {
 
                 # csv quote
                 if ( !@CSVHead ) {
-                    @CSVHead = @{ $Self->{Config}->{SearchCSVData} };
+                    @CSVHead = @{ $Self->{Config}{SearchCSVData} };
                 }
 
                 # store data
@@ -1083,7 +1083,7 @@ sub Run {
             # csv quote
             # translate non existing header may result in a garbage file
             if ( !@CSVHead ) {
-                @CSVHead = @{ $Self->{Config}->{SearchCSVData} };
+                @CSVHead = @{ $Self->{Config}{SearchCSVData} };
             }
 
             # translate headers
@@ -1160,7 +1160,7 @@ sub Run {
                     Scope  => 'Item',
                     ItemID => $ConfigItemID,
                     UserID => $Self->{UserID},
-                    Type   => $Self->{Config}->{Permission},
+                    Type   => $Self->{Config}{Permission},
                 );
 
                 next CONFIGITEMID if !$HasAccess;
@@ -1197,34 +1197,34 @@ sub Run {
 
             # output 'No Result', if no content was given
             if (@PDFData) {
-                $CellData->[0]->[0]->{Content} = $LayoutObject->{LanguageObject}->Translate('Class');
-                $CellData->[0]->[0]->{Font}    = 'ProportionalBold';
-                $CellData->[0]->[1]->{Content} = $LayoutObject->{LanguageObject}->Translate('Incident State');
-                $CellData->[0]->[1]->{Font}    = 'ProportionalBold';
-                $CellData->[0]->[2]->{Content} = $LayoutObject->{LanguageObject}->Translate('Name');
-                $CellData->[0]->[2]->{Font}    = 'ProportionalBold';
-                $CellData->[0]->[3]->{Content} = $LayoutObject->{LanguageObject}->Translate('Number');
-                $CellData->[0]->[3]->{Font}    = 'ProportionalBold';
-                $CellData->[0]->[4]->{Content} = $LayoutObject->{LanguageObject}->Translate('Deployment State');
-                $CellData->[0]->[4]->{Font}    = 'ProportionalBold';
-                $CellData->[0]->[5]->{Content} = $LayoutObject->{LanguageObject}->Translate('Version');
-                $CellData->[0]->[5]->{Font}    = 'ProportionalBold';
-                $CellData->[0]->[6]->{Content} = $LayoutObject->{LanguageObject}->Translate('Create Time');
-                $CellData->[0]->[6]->{Font}    = 'ProportionalBold';
+                $CellData->[0][0]{Content} = $LayoutObject->{LanguageObject}->Translate('Class');
+                $CellData->[0][0]{Font}    = 'ProportionalBold';
+                $CellData->[0][1]{Content} = $LayoutObject->{LanguageObject}->Translate('Incident State');
+                $CellData->[0][1]{Font}    = 'ProportionalBold';
+                $CellData->[0][2]{Content} = $LayoutObject->{LanguageObject}->Translate('Name');
+                $CellData->[0][2]{Font}    = 'ProportionalBold';
+                $CellData->[0][3]{Content} = $LayoutObject->{LanguageObject}->Translate('Number');
+                $CellData->[0][3]{Font}    = 'ProportionalBold';
+                $CellData->[0][4]{Content} = $LayoutObject->{LanguageObject}->Translate('Deployment State');
+                $CellData->[0][4]{Font}    = 'ProportionalBold';
+                $CellData->[0][5]{Content} = $LayoutObject->{LanguageObject}->Translate('Version');
+                $CellData->[0][5]{Font}    = 'ProportionalBold';
+                $CellData->[0][6]{Content} = $LayoutObject->{LanguageObject}->Translate('Create Time');
+                $CellData->[0][6]{Font}    = 'ProportionalBold';
 
                 # create the content array
                 my $CounterRow = 1;
                 for my $Row (@PDFData) {
                     my $CounterColumn = 0;
                     for my $Content ( @{$Row} ) {
-                        $CellData->[$CounterRow]->[$CounterColumn]->{Content} = $Content;
+                        $CellData->[$CounterRow][$CounterColumn]{Content} = $Content;
                         $CounterColumn++;
                     }
                     $CounterRow++;
                 }
             }
             else {
-                $CellData->[0]->[0]->{Content} = $LayoutObject->{LanguageObject}->Translate('No Result!');
+                $CellData->[0][0]{Content} = $LayoutObject->{LanguageObject}->Translate('No Result!');
             }
 
             # page params
