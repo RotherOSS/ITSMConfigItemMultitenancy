@@ -296,7 +296,7 @@ sub Run {
 
         # get all attachments meta data
         my @ExistingAttachments = $ConfigItemObject->ConfigItemAttachmentList(
-            ConfigItemID => $ConfigItem->{ConfigItemID},
+            ConfigItemID => $DuplicateID || $ConfigItem->{ConfigItemID},
         );
 
         # copy all existing attachments to upload cache
@@ -305,7 +305,7 @@ sub Run {
 
             # get the existing attachment data
             my $AttachmentData = $ConfigItemObject->ConfigItemAttachmentGet(
-                ConfigItemID => $ConfigItem->{ConfigItemID},
+                ConfigItemID => $DuplicateID || $ConfigItem->{ConfigItemID},
                 Filename     => $Filename,
                 UserID       => $Self->{UserID},
             );
@@ -764,7 +764,7 @@ sub Run {
             for my $Attachment ( values %NewAttachment ) {
 
                 # add attachment
-                if ( $Attachment->{Disposition} eq 'inline' ) {
+                if ( $Attachment->{Disposition} && $Attachment->{Disposition} eq 'inline' ) {
                     my $Success = $ConfigItemObject->VersionAttachmentAdd(
                         %{$Attachment},
                         VersionID => $NewConfigItemData->{VersionID},
@@ -815,11 +815,11 @@ sub Run {
 
                 # return to overview or search results instead if called Duplicate from row action
                 if (
-                    $Self->{LastScreenView} eq 'Action=AgentITSMConfigItem'
-                    || $Self->{LastScreenView} =~ m{\A Action=AgentITSMConfigItem(?: Search)?;}msx
+                    $Self->{Session}{LastScreenView} eq 'Action=AgentITSMConfigItem'
+                    || $Self->{Session}{LastScreenView} =~ m{\A Action=AgentITSMConfigItem(?: Search)?;}msx
                     )
                 {
-                    $URL = $Self->{LastScreenView};
+                    $URL = $Self->{Session}{LastScreenView};
                 }
 
                 return $LayoutObject->PopupClose(
@@ -1483,9 +1483,20 @@ sub Run {
         );
 
         if ( scalar @PageHTML > 1 ) {
-            my $HeaderTemplate = '<div class="Row Row_PageHeader"><h2>[% Translate(Data.Name) | html %]</h2><hr/></div>';
+            my $HeaderTemplate =
+                '<summary>
+                <div class="Row Row_PageHeader">
+                    <div class="Toggle">
+                        <i class="fa fa-caret-right"></i>
+                        <i class="fa fa-caret-down"></i>
+                    </div>
+                    <h2>[% Translate(Data.Name) | html %]</h2>
+                    <hr/>
+                </div>
+            </summary>';
 
             for my $Page (@PageHTML) {
+                $DynamicFieldHTML .= '<details class="PageContent">';
                 $DynamicFieldHTML .= $LayoutObject->Output(
                     Template => $HeaderTemplate,
                     Data     => {
@@ -1493,9 +1504,11 @@ sub Run {
                     },
                 );
                 $DynamicFieldHTML .= $Page->{HTML};
+                $DynamicFieldHTML .= '</details>';
             }
 
             if ($ShowDescription) {
+                $DynamicFieldHTML .= '<details class="PageContent">';
                 $DynamicFieldHTML .= $LayoutObject->Output(
                     Template => $HeaderTemplate,
                     Data     => {

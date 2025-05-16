@@ -329,10 +329,6 @@ sub Run {
                     ErrorCode    => "$Self->{OperationName}.AccessDenied",
                     ErrorMessage => "$Self->{OperationName}: Can not write unauthorized group to configuration item!",
                 );
-
-                #return $Self->Error(
-                #    ErrorMessage => "Error while looking up Group '$RemoteCIData->{Group}'.",
-                #);
             }
         }
 

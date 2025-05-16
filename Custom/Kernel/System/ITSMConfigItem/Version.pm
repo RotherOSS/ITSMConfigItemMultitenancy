@@ -636,6 +636,7 @@ sub VersionAdd {
         return;
     }
 
+    my $GroupID = $Version{GroupID} ? $Version{GroupID} : undef;
     my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
 
     # insert new version
@@ -658,7 +659,7 @@ END_SQL
             \$Version{DeplStateID},
             \$Version{InciStateID},
             \$Version{Description},
-            \$Version{GroupID},
+            \$GroupID,
             \$Param{UserID},
             \$Param{UserID},
         ],
@@ -708,7 +709,7 @@ END_SQL
                 $VersionID,
                 $Version{InciStateID},
                 $Version{DeplStateID},
-                $Version{GroupID},
+                $GroupID,
                 $VersionCreateTime,
                 $Param{UserID},
                 $Version{ConfigItemID}
@@ -1010,6 +1011,17 @@ END_SQL
 
             # TODO: roll back the 'UPDATE INTO configitem_version'
             return unless $UpdateSuccess;
+
+            # trigger VersionUpdate event
+            $Self->EventHandler(
+                Event => 'VersionUpdate',
+                Data  => {
+                    ConfigItemID => $Version->{ConfigItemID},
+                    Comment      => $Version->{VersionID},
+                    OldDeplState => $Version->{CurDeplState},
+                },
+                UserID => $Param{UserID},
+            );
         }
     }
 

@@ -20,7 +20,7 @@ use strict;
 use warnings;
 
 # core modules
-use List::Util qw(uniq);
+use List::Util qw(any uniq);
 
 # CPAN modules
 
@@ -44,7 +44,7 @@ sub Run {
     my ( $Self, %Param ) = @_;
     my $Output;
 
-    # get neccessary objects
+    # get necessary objects
     my $BackendObject        = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
     my $ConfigItemObject     = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
     my $ConfigObject         = $Kernel::OM->Get('Kernel::Config');
@@ -129,6 +129,52 @@ sub Run {
             );
         }
 
+        my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+        my %SetInnerFields;
+        DYNAMICFIELD:
+        for my $DynamicFieldConfig ( values $Definition->{DynamicFieldRef}->%* ) {
+
+            next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
+            next DYNAMICFIELD unless $DynamicFieldConfig->{FieldType} eq 'Set';
+            next DYNAMICFIELD unless IsArrayRefWithData( $DynamicFieldConfig->{Config}{Include} );
+
+            # iterate the entire Include structure to get the versioned dynamic field configs
+            INCLUDEELEMENT:
+            for my $IncludeElement ( $DynamicFieldConfig->{Config}{Include}->@* ) {
+
+                if ( $IncludeElement->{DF} ) {
+                    $IncludeElement->{Definition}{Label} = $LayoutObject->{LanguageObject}->Translate( $DynamicFieldConfig->{Label} ) . '::'
+                        . $LayoutObject->{LanguageObject}->Translate( $IncludeElement->{Definition}{Label} );
+                    $SetInnerFields{ $IncludeElement->{DF} } = $IncludeElement->{Definition};
+                }
+                elsif ( $IncludeElement->{Grid} ) {
+
+                    next INCLUDEELEMENT unless IsHashRefWithData( $IncludeElement->{Grid} );
+                    next INCLUDEELEMENT unless IsArrayRefWithData( $IncludeElement->{Grid}{Rows} );
+
+                    ROW:
+                    for my $Row ( $IncludeElement->{Grid}{Rows}->@* ) {
+
+                        next ROW unless IsArrayRefWithData($Row);
+
+                        ROWELEMENT:
+                        for my $RowElement ( $Row->@* ) {
+                            if ( $RowElement->{DF} ) {
+                                $RowElement->{Definition}{Label} = $LayoutObject->{LanguageObject}->Translate( $DynamicFieldConfig->{Label} ) . '::'
+                                    . $LayoutObject->{LanguageObject}->Translate( $RowElement->{Definition}{Label} );
+                                $SetInnerFields{ $RowElement->{DF} } = $RowElement->{Definition};
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        $Definition->{DynamicFieldRef} = {
+            $Definition->{DynamicFieldRef}->%*,
+            %SetInnerFields,
+        };
+
         # load profiles string params
         if ( ( $Self->{Subaction} eq 'LoadProfile' && $Self->{Profile} ) || $Self->{TakeLastSearch} ) {
             %GetParam = $SearchProfileObject->SearchProfileGet(
@@ -191,8 +237,9 @@ sub Run {
             # cycle trough the activated Dynamic Fields for this screen
             DYNAMICFIELD:
             for my $DynamicFieldConfig ( values $Definition->{DynamicFieldRef}->%* ) {
-                next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-                next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
+
+                next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
+                next DYNAMICFIELD unless $DynamicFieldConfig->{Name};
                 next DYNAMICFIELD unless $Self->{Config}{DynamicField}{ $DynamicFieldConfig->{Name} };
 
                 # get search field preferences
@@ -200,7 +247,7 @@ sub Run {
                     DynamicFieldConfig => $DynamicFieldConfig,
                 );
 
-                next DYNAMICFIELD if !IsArrayRefWithData($SearchFieldPreferences);
+                next DYNAMICFIELD unless IsArrayRefWithData($SearchFieldPreferences);
 
                 PREFERENCE:
                 for my $Preference ( @{$SearchFieldPreferences} ) {
@@ -387,16 +434,82 @@ sub Run {
             },
         );
 
+        # walk through definition to check permissions on pages which contain dynamic fields
+        my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+        my %PermittedDynamicFields;
+        my %GroupLookup;
+
+        PAGE:
+        for my $Page ( $Definition->{DefinitionRef}{Pages}->@* ) {
+
+            # Interfaces is optional, effectively default to [ 'Agent' ]
+            if ( $Page->{Interfaces} ) {
+                next PAGE unless any { $_ eq 'Agent' } $Page->{Interfaces}->@*;
+            }
+
+            if ( $Page->{Groups} ) {
+                if ( !%GroupLookup ) {
+                    %GroupLookup = reverse $Kernel::OM->Get('Kernel::System::Group')->PermissionUserGet(
+                        UserID => $Self->{UserID},
+                        Type   => 'ro',
+                    );
+                }
+
+                # grant access to the page only when the user is in one of the specified groups
+                next PAGE unless any { $GroupLookup{$_} } $Page->{Groups}->@*;
+            }
+
+            SECTION:
+            for my $SectionConfig ( $Page->{Content}->@* ) {
+                my $Section = $Definition->{DefinitionRef}{Sections}{ $SectionConfig->{Section} };
+
+                next SECTION unless $Section;
+                if ( $Section->{Type} ) {
+                    if ( $Section->{Type} ne 'DynamicFields' ) {
+                        next SECTION;
+                    }
+                }
+
+                # do not proceed if content is empty
+                next SECTION unless $Section->{Content}->@*;
+
+                my $SectionDFs = $DynamicFieldObject->DynamicFieldListMask(
+                    Content => $Section->{Content},
+                );
+
+                if ( IsArrayRefWithData($SectionDFs) ) {
+                    for my $DFName ( $SectionDFs->@* ) {
+                        $PermittedDynamicFields{$DFName} = 1;
+
+                        # also include Set-inner fields
+                        if ( $Definition->{DynamicFieldRef}{$DFName}{FieldType} eq 'Set' ) {
+                            my $SetInnerFields = $DynamicFieldObject->DynamicFieldListMask(
+                                Content => $Definition->{DynamicFieldRef}{$DFName}{Config}{Include},
+                            );
+
+                            if ( IsArrayRefWithData($SetInnerFields) ) {
+                                for my $InnerDF ( $SetInnerFields->@* ) {
+                                    $PermittedDynamicFields{$InnerDF} = 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         # dynamic fields
         my $DynamicFieldSeparator = 1;
 
         # create dynamic fields search options for attribute select
         # cycle trough the activated Dynamic Fields for this definition
         DYNAMICFIELD:
-        for my $DynamicFieldConfig ( values $Definition->{DynamicFieldRef}->%* ) {
-            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-            next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
+        for my $DynamicFieldConfig ( sort { $a->{Label} cmp $b->{Label} } values $Definition->{DynamicFieldRef}->%* ) {
+
+            next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
+            next DYNAMICFIELD unless $DynamicFieldConfig->{Name};
             next DYNAMICFIELD unless $Self->{Config}{DynamicField}{ $DynamicFieldConfig->{Name} };
+            next DYNAMICFIELD unless $PermittedDynamicFields{ $DynamicFieldConfig->{Name} };
 
             # create a separator for dynamic fields attributes
             if ($DynamicFieldSeparator) {
@@ -415,7 +528,7 @@ sub Run {
                 DynamicFieldConfig => $DynamicFieldConfig,
             );
 
-            next DYNAMICFIELD if !IsArrayRefWithData($SearchFieldPreferences);
+            next DYNAMICFIELD unless IsArrayRefWithData($SearchFieldPreferences);
 
             # translate the dynamic field label
             my $TranslatedDynamicFieldLabel = $LayoutObject->{LanguageObject}->Translate(
@@ -451,8 +564,10 @@ sub Run {
         # cycle trough the activated Dynamic Fields for this screen
         DYNAMICFIELD:
         for my $DynamicFieldConfig ( values $Definition->{DynamicFieldRef}->%* ) {
-            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+
+            next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
             next DYNAMICFIELD unless $Self->{Config}{DynamicField}{ $DynamicFieldConfig->{Name} };
+            next DYNAMICFIELD unless $PermittedDynamicFields{ $DynamicFieldConfig->{Name} };
 
             my $PossibleValuesFilter;
 
@@ -513,7 +628,7 @@ sub Run {
                 DynamicFieldConfig => $DynamicFieldConfig,
             );
 
-            next DYNAMICFIELD if !IsArrayRefWithData($SearchFieldPreferences);
+            next DYNAMICFIELD unless IsArrayRefWithData($SearchFieldPreferences);
 
             PREFERENCE:
             for my $Preference ( @{$SearchFieldPreferences} ) {
@@ -637,16 +752,18 @@ sub Run {
         # cycle trough the activated Dynamic Fields for this screen
         DYNAMICFIELD:
         for my $DynamicFieldConfig ( values $Definition->{DynamicFieldRef}->%* ) {
-            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-            next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
+
+            next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
+            next DYNAMICFIELD unless $DynamicFieldConfig->{Name};
             next DYNAMICFIELD unless $Self->{Config}{DynamicField}{ $DynamicFieldConfig->{Name} };
+            next DYNAMICFIELD unless $PermittedDynamicFields{ $DynamicFieldConfig->{Name} };
 
             # get search field preferences
             my $SearchFieldPreferences = $BackendObject->SearchFieldPreferences(
                 DynamicFieldConfig => $DynamicFieldConfig,
             );
 
-            next DYNAMICFIELD if !IsArrayRefWithData($SearchFieldPreferences);
+            next DYNAMICFIELD unless IsArrayRefWithData($SearchFieldPreferences);
 
             PREFERENCE:
             for my $Preference ( @{$SearchFieldPreferences} ) {
@@ -881,6 +998,114 @@ sub Run {
             );
         }
 
+        my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+        my %SetInnerFields;
+        DYNAMICFIELD:
+        for my $DynamicFieldConfig ( values $Definition->{DynamicFieldRef}->%* ) {
+
+            next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
+            next DYNAMICFIELD unless $DynamicFieldConfig->{FieldType} eq 'Set';
+            next DYNAMICFIELD unless IsArrayRefWithData( $DynamicFieldConfig->{Config}{Include} );
+
+            # iterate the entire Include structure to get the versioned dynamic field configs
+            INCLUDEELEMENT:
+            for my $IncludeElement ( $DynamicFieldConfig->{Config}{Include}->@* ) {
+
+                if ( $IncludeElement->{DF} ) {
+                    $IncludeElement->{Definition}{Label} = $LayoutObject->{LanguageObject}->Translate( $DynamicFieldConfig->{Label} ) . '::'
+                        . $LayoutObject->{LanguageObject}->Translate( $IncludeElement->{Definition}{Label} );
+                    $SetInnerFields{ $IncludeElement->{DF} } = $IncludeElement->{Definition};
+                }
+                elsif ( $IncludeElement->{Grid} ) {
+
+                    next INCLUDEELEMENT unless IsArrayRefWithData( $IncludeElement->{Grid} );
+
+                    ROW:
+                    for my $Row ( $IncludeElement->{Grid}{Rows}->@* ) {
+
+                        next ROW unless IsArrayRefWithData($Row);
+
+                        ROWELEMENT:
+                        for my $RowElement ( $Row->@* ) {
+                            if ( $RowElement->{DF} ) {
+                                $RowElement->{Definition}{Label} = $LayoutObject->{LanguageObject}->Translate( $DynamicFieldConfig->{Label} ) . '::'
+                                    . $LayoutObject->{LanguageObject}->Translate( $RowElement->{Definition}{Label} );
+                                $SetInnerFields{ $RowElement->{DF} } = $RowElement->{Definition};
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        $Definition->{DynamicFieldRef} = {
+            $Definition->{DynamicFieldRef}->%*,
+            %SetInnerFields,
+        };
+
+        # walk through definition to check permissions on pages which contain dynamic fields
+        my %PermittedDynamicFields;
+        my %GroupLookup;
+
+        PAGE:
+        for my $Page ( $Definition->{DefinitionRef}{Pages}->@* ) {
+
+            # Interfaces is optional, effectively default to [ 'Agent' ]
+            if ( $Page->{Interfaces} ) {
+                next PAGE unless any { $_ eq 'Agent' } $Page->{Interfaces}->@*;
+            }
+
+            if ( $Page->{Groups} ) {
+                if ( !%GroupLookup ) {
+                    %GroupLookup = reverse $Kernel::OM->Get('Kernel::System::Group')->PermissionUserGet(
+                        UserID => $Self->{UserID},
+                        Type   => 'ro',
+                    );
+                }
+
+                # grant access to the page only when the user is in one of the specified groups
+                next PAGE unless any { $GroupLookup{$_} } $Page->{Groups}->@*;
+            }
+
+            SECTION:
+            for my $SectionConfig ( $Page->{Content}->@* ) {
+                my $Section = $Definition->{DefinitionRef}{Sections}{ $SectionConfig->{Section} };
+
+                next SECTION unless $Section;
+                if ( $Section->{Type} ) {
+                    if ( $Section->{Type} ne 'DynamicFields' ) {
+                        next SECTION;
+                    }
+                }
+
+                # do not proceed if content is empty
+                next SECTION unless $Section->{Content}->@*;
+
+                my $SectionDFs = $DynamicFieldObject->DynamicFieldListMask(
+                    Content => $Section->{Content},
+                );
+
+                if ( IsArrayRefWithData($SectionDFs) ) {
+                    for my $DFName ( $SectionDFs->@* ) {
+                        $PermittedDynamicFields{$DFName} = 1;
+
+                        # also include Set-inner fields
+                        if ( $Definition->{DynamicFieldRef}{$DFName}{FieldType} eq 'Set' ) {
+                            my $SetInnerFields = $DynamicFieldObject->DynamicFieldListMask(
+                                Content => $Definition->{DynamicFieldRef}{$DFName}{Config}{Include},
+                            );
+
+                            if ( IsArrayRefWithData($SetInnerFields) ) {
+                                for my $InnerDF ( $SetInnerFields->@* ) {
+                                    $PermittedDynamicFields{$InnerDF} = 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         # convert attributes
         if ( $GetParam{ShownAttributes} && ref $GetParam{ShownAttributes} eq '' ) {
             $GetParam{ShownAttributes} = [ split /;/, $GetParam{ShownAttributes} ];
@@ -927,16 +1152,18 @@ sub Run {
         # cycle trough the activated Dynamic Fields for this screen
         DYNAMICFIELD:
         for my $DynamicFieldConfig ( values $Definition->{DynamicFieldRef}->%* ) {
-            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-            next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
+
+            next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
+            next DYNAMICFIELD unless $DynamicFieldConfig->{Name};
             next DYNAMICFIELD unless $Self->{Config}{DynamicField}{ $DynamicFieldConfig->{Name} };
+            next DYNAMICFIELD unless $PermittedDynamicFields{ $DynamicFieldConfig->{Name} };
 
             # get search field preferences
             my $SearchFieldPreferences = $BackendObject->SearchFieldPreferences(
                 DynamicFieldConfig => $DynamicFieldConfig,
             );
 
-            next DYNAMICFIELD if !IsArrayRefWithData($SearchFieldPreferences);
+            next DYNAMICFIELD unless IsArrayRefWithData($SearchFieldPreferences);
 
             PREFERENCE:
             for my $Preference ( @{$SearchFieldPreferences} ) {
@@ -1006,8 +1233,8 @@ sub Run {
             # include the selected dynamic fields in CVS results
             DYNAMICFIELD:
             for my $DynamicFieldConfig ( @{$CSVDynamicField} ) {
-                next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-                next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
+                next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
+                next DYNAMICFIELD unless $DynamicFieldConfig->{Name};
                 next DYNAMICFIELD if $DynamicFieldConfig->{Name} eq '';
 
                 push @TmpCSVHead, 'DynamicField_' . $DynamicFieldConfig->{Name};
@@ -1051,8 +1278,8 @@ sub Run {
                         # loop over the dynamic fields configured for CSV output
                         DYNAMICFIELD:
                         for my $DynamicFieldConfig ( @{$CSVDynamicField} ) {
-                            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-                            next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
+                            next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
+                            next DYNAMICFIELD unless $DynamicFieldConfig->{Name};
 
                             # skip all fields that does not match with current field name ($1)
                             # with out the 'DynamicField_' prefix
@@ -1098,6 +1325,18 @@ sub Run {
                 }
             }
 
+            # Get Separator from language file.
+            my $UserCSVSeparator = $LayoutObject->{LanguageObject}->{Separator};
+
+            if ( $ConfigObject->Get('PreferencesGroups')->{CSVSeparator}->{Active} ) {
+                my %UserData = $Kernel::OM->Get('Kernel::System::User')->GetUserData(
+                    UserID => $Self->{UserID},
+                );
+                if ( $UserData{UserCSVSeparator} ) {
+                    $UserCSVSeparator = $UserData{UserCSVSeparator};
+                }
+            }
+
             my $CSVObject      = $Kernel::OM->Get('Kernel::System::CSV');
             my $CurSysDTObject = $Kernel::OM->Create('Kernel::System::DateTime');
             if ( $GetParam{ResultForm} eq 'CSV' ) {
@@ -1106,7 +1345,7 @@ sub Run {
                 my $CSV = $CSVObject->Array2CSV(
                     Head      => \@CSVHead,
                     Data      => \@CSVData,
-                    Separator => $Self->{UserCSVSeparator},
+                    Separator => $UserCSVSeparator,
                 );
 
                 # Return CSV to download.

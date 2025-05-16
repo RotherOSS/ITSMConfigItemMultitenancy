@@ -47,6 +47,7 @@ sub Run {
     my $BackendObject        = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
     my $ConfigObject         = $Kernel::OM->Get('Kernel::Config');
     my $ConfigItemObject     = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    my $DynamicFieldObject   = $Kernel::OM->Get('Kernel::System::DynamicField');
     my $GeneralCatalogObject = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
     my $LayoutObject         = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
     my $ParamObject          = $Kernel::OM->Get('Kernel::System::Web::Request');
@@ -62,11 +63,47 @@ sub Run {
     );
 
     # get configured dynamic fields for this screen
-    $Self->{DynamicField} = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldListGet(
+    $Self->{DynamicField} = $DynamicFieldObject->DynamicFieldListGet(
         Valid       => 1,
         ObjectType  => ['ITSMConfigItem'],
         FieldFilter => $Config->{DynamicField},
     );
+
+    my @SetInnerFields;
+    DYNAMICFIELD:
+    for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
+
+        next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
+        next DYNAMICFIELD unless $DynamicFieldConfig->{FieldType} eq 'Set';
+        next DYNAMICFIELD unless IsArrayRefWithData( $DynamicFieldConfig->{Config}{Include} );
+
+        # fetch the list of included dynamic field names to get the configs
+        my $SetInnerFieldNames = $DynamicFieldObject->DynamicFieldListMask(
+            Content => $DynamicFieldConfig->{Config}{Include},
+        );
+
+        if ( IsArrayRefWithData($SetInnerFieldNames) ) {
+            my $InnerFieldConfigs = $DynamicFieldObject->DynamicFieldListGet(
+                Valid       => 1,
+                FieldFilter => { map { ( $_ => 1 ) } $SetInnerFieldNames->@* },
+            );
+
+            if ( IsArrayRefWithData($InnerFieldConfigs) ) {
+                for my $InnerFieldConfigRef ( $InnerFieldConfigs->@* ) {
+
+                    # necessary to not overwrite cached data of field config by altering the reference
+                    my %InnerFieldConfig = $InnerFieldConfigRef->%*;
+
+                    $InnerFieldConfig{Label} = $LayoutObject->{LanguageObject}->Translate( $DynamicFieldConfig->{Label} ) . '::'
+                        . $LayoutObject->{LanguageObject}->Translate( $InnerFieldConfig{Label} );
+                    push @SetInnerFields, \%InnerFieldConfig;
+
+                }
+            }
+        }
+    }
+
+    push @{ $Self->{DynamicField} }, @SetInnerFields;
 
     # build NavigationBar & to get the output faster!
     my $Refresh = '';
@@ -293,7 +330,7 @@ sub Run {
                 if ( defined $SearchParameter ) {
 
                     # append search params to links
-                    if ( IsArrayRefWithData( $SearchParameter->{Parameter}{Equals} ) ) {
+                    if ( ref $SearchParameter->{Parameter}{Equals} eq 'ARRAY' ) {
                         $LinkPage .= join(
                             '',
                             map { ";Search_DynamicField_$DynamicFieldConfig->{Name}=" . $LayoutObject->Ascii2Html( Text => $_ ) } $SearchParameter->{Parameter}{Equals}->@*

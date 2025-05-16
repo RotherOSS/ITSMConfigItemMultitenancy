@@ -263,7 +263,6 @@ sub Run {
                 my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
                 DYNAMICFIELD:
                 for my $FieldName ( keys $PermissionConditionConfig->{DynamicFieldValues}->%* ) {
-                    next DYNAMICFIELD unless $PermissionConditionConfig->{DynamicFieldValues}{$FieldName};
 
                     my $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
                         Name => $FieldName,
@@ -272,9 +271,16 @@ sub Run {
                     next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
                     next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
 
-                    $DFSearchParams{"DynamicField_$FieldName"} = {
-                        Equals => $PermissionConditionConfig->{DynamicFieldValues}{$FieldName},
-                    };
+                    if ( $PermissionConditionConfig->{DynamicFieldValues}{$FieldName} ) {
+                        $DFSearchParams{"DynamicField_$FieldName"} = {
+                            Equals => $PermissionConditionConfig->{DynamicFieldValues}{$FieldName},
+                        };
+                    }
+                    elsif ( $PermissionConditionConfig->{DynamicFieldValues}{$FieldName} eq '' ) {
+                        $DFSearchParams{"DynamicField_$FieldName"} = {
+                            Empty => 1,
+                        };
+                    }
                 }
             }
             my $CustomerGroupObject  = $Kernel::OM->Get('Kernel::System::CustomerGroup');

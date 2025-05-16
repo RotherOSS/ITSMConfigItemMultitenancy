@@ -391,14 +391,18 @@ sub Run {
         ItemID => $ConfigItem->{ClassID},
     );
     if ( $ClassPreferences{ConfigItemGroup} && $ClassPreferences{ConfigItemGroup}[0] ) {
-        my $GroupObject = $Kernel::OM->Get('Kernel::System::Group');
-        my %Groups      = $GroupObject->GroupList(
-            Valid => 1,
-        );
+        my $GroupName;
+        if ($ConfigItem->{GroupID}) {
+            my $GroupObject = $Kernel::OM->Get('Kernel::System::Group');
+            my %Groups      = $GroupObject->GroupList(
+                Valid => 1,
+            );
+            $GroupName = $Groups{ $ConfigItem->{GroupID} };
+        }
         $LayoutObject->Block(
             Name => 'Group',
             Data => {
-                GroupName => $Groups{ $ConfigItem->{GroupID} },
+                GroupName => $GroupName,
             },
         );
     }
@@ -503,7 +507,7 @@ sub Run {
 
     $LayoutObject->AddJSData(
         Key   => 'UserConfigItemZoomTableHeight',
-        Value => $Self->{UserConfigItemZoomTableHeight},
+        Value => $Self->{Session}{UserConfigItemZoomTableHeight},
     );
 
     # start template output
