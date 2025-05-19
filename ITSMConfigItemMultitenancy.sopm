@@ -25,7 +25,6 @@
         <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem/Permission.pm" />
         <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem/Version.pm" />
         <File Permission="660" Location="Kernel/Config/Files/XML/ITSMConfigItemMultitenancy.xml" />        
-        <File Permission="660" Location="Kernel/System/ITSMConfigItem/Permission/ItemGroupCheck.pm" />        
     </Filelist>
     <IntroInstall Type="post" Title="Convert legacy reference fields" Lang="en"><![CDATA[
 

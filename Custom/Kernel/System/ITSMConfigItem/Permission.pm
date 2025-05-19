@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.de/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -88,6 +88,15 @@ sub Permission {
         return;
     }
 
+# Rother OSS / ITSMConfigItemMultitenancy
+    if ( $Param{Scope} eq 'Item' ) {
+        my $GroupAuth = $Self->_ItemGroupCheck(
+            %Param,
+        );
+        return unless $GroupAuth;
+    }
+# EO ITSMConfigItemMultitenancy
+
     # Run all ITSMConfigItem Permission modules.
     #
     # The idea is the the permission modules are ordered and can be divided into two phases.
@@ -103,7 +112,6 @@ sub Permission {
         my %Modules = %{
             $Kernel::OM->Get('Kernel::Config')->Get( 'ITSMConfigItem::Permission::' . $Param{Scope} )
         };
-
         MODULE:
         for my $Module ( sort keys %Modules ) {
 
@@ -115,37 +123,42 @@ sub Permission {
 
             # execute Run()
             my $AccessOk = $ModuleObject->Run(%Param);
-            # check granted option (should I say ok)
-            if ( !$AccessOk || !$Modules{$Module}->{Granted} ) {
-                # refuse access  because access is false but it's required
-                if ( !$AccessOk && $Modules{$Module}->{Required} ) {
-                    if ( !$Param{LogNo} ) {
-                        $Kernel::OM->Get('Kernel::System::Log')->Log(
-                            Priority => 'notice',
-                            Message  => "Permission denied because module "
-                                . "($Modules{$Module}->{Module}) is required "
-                                . "(UserID: $Param{UserID} '$Param{Type}' "
-                                . "on $Param{Scope}: " . $Param{ $Param{Scope} . 'ID' } . ")!",
-                        );
-                    }
-                }
 
-                # don't grant access
+            # check granted option (should I say ok)
+            if ( $AccessOk && $Modules{$Module}->{Granted} ) {
+
+                # access ok
+                return 1;
+            }
+
+            # refuse access  because access is false but it's required
+            if ( !$AccessOk && $Modules{$Module}->{Required} ) {
                 if ( !$Param{LogNo} ) {
                     $Kernel::OM->Get('Kernel::System::Log')->Log(
                         Priority => 'notice',
-                        Message  => "Permission denied (UserID: $Param{UserID} '$Param{Type}' "
+                        Message  => "Permission denied because module "
+                            . "($Modules{$Module}->{Module}) is required "
+                            . "(UserID: $Param{UserID} '$Param{Type}' "
                             . "on $Param{Scope}: " . $Param{ $Param{Scope} . 'ID' } . ")!",
                     );
                 }
 
+                # refuse access
                 return;
             }
         }
     }
 
-    # access ok
-    return 1;
+    # don't grant access
+    if ( !$Param{LogNo} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'notice',
+            Message  => "Permission denied (UserID: $Param{UserID} '$Param{Type}' "
+                . "on $Param{Scope}: " . $Param{ $Param{Scope} . 'ID' } . ")!",
+        );
+    }
+
+    return;
 }
 
 =head2 CustomerPermission()
@@ -175,22 +188,13 @@ sub CustomerPermission {
     }
 
     my $CustomerGroupObject = $Kernel::OM->Get('Kernel::System::CustomerGroup');
+    my %GroupLookup;
+
     my %Conditions = %{ $Kernel::OM->Get('Kernel::Config')->Get('Customer::ConfigItem::PermissionConditions') // {} };
     my $ConfigItem = $Self->ConfigItemGet(
         ConfigItemID  => $Param{ConfigItemID},
         DynamicFields => any { $_->{CustomerUserDynamicField} || $_->{CustomerCompanyDynamicField} } values %Conditions,
     );
-    my %GroupLookup = reverse $CustomerGroupObject->GroupMemberList(
-            UserID => $Param{UserID},
-            Type   => 'ro',
-            Result => 'HASH',
-        );
-
-    # the attribute group_id must exist in the CI, even if null, otherwise there is a security gap
-    return if !exists $ConfigItem->{GroupID};
-
-    # if group_id is defined, then it must belong to one of the customer user's authorized groups
-    return if $ConfigItem->{GroupID} && none { $_ eq $ConfigItem->{GroupID} } values %GroupLookup;
 
     CONDITION:
     for my $ConditionSet ( values %Conditions ) {
@@ -220,24 +224,45 @@ sub CustomerPermission {
 
         if ( $ConditionSet->{DynamicFieldValues} ) {
             for my $FieldName ( keys $ConditionSet->{DynamicFieldValues}->%* ) {
-                my $FieldValue = $ConditionSet->{DynamicFieldValues}{$FieldName};
-                next CONDITION if $FieldValue && !$ConfigItem->{"DynamicField_$FieldName"} eq $FieldValue;
+                my $ConditionValue = $ConditionSet->{DynamicFieldValues}{$FieldName} // '';
+
+                if ( !defined $ConfigItem->{"DynamicField_$FieldName"} ) {
+                    next CONDITION if $ConditionValue ne '';
+                }
+                elsif ( !ref $ConfigItem->{"DynamicField_$FieldName"} ) {
+                    next CONDITION if $ConditionValue ne $ConfigItem->{"DynamicField_$FieldName"};
+                }
+                elsif ( $ConditionValue eq '' ) {
+                    next CONDITION if $ConfigItem->{"DynamicField_$FieldName"}->@*;
+                }
+                else {
+                    next CONDITION if none { $_ eq $ConditionValue } $ConfigItem->{"DynamicField_$FieldName"}->@*;
+                }
             }
         }
 
         if ( $ConditionSet->{CustomerUserDynamicField} ) {
             next CONDITION if !$ConfigItem->{ 'DynamicField_' . $ConditionSet->{CustomerUserDynamicField} };
-            next CONDITION if none { $_ eq $Param{UserID} } $ConfigItem->{ 'DynamicField_' . $ConditionSet->{CustomerUserDynamicField} }->@*;
+
+            my @CustomerUsers = ref $ConfigItem->{ 'DynamicField_' . $ConditionSet->{CustomerUserDynamicField} }
+                ? $ConfigItem->{ 'DynamicField_' . $ConditionSet->{CustomerUserDynamicField} }->@*
+                : ( $ConfigItem->{ 'DynamicField_' . $ConditionSet->{CustomerUserDynamicField} } );
+
+            next CONDITION if none { $_ eq $Param{UserID} } @CustomerUsers;
         }
 
         if ( $ConditionSet->{CustomerCompanyDynamicField} ) {
             next CONDITION if !$ConfigItem->{ 'DynamicField_' . $ConditionSet->{CustomerCompanyDynamicField} };
 
+            my @CustomerCompanies = ref $ConfigItem->{ 'DynamicField_' . $ConditionSet->{CustomerCompanyDynamicField} }
+                ? $ConfigItem->{ 'DynamicField_' . $ConditionSet->{CustomerCompanyDynamicField} }->@*
+                : ( $ConfigItem->{ 'DynamicField_' . $ConditionSet->{CustomerCompanyDynamicField} } );
+
             my %AccessibleCustomers = $Kernel::OM->Get('Kernel::System::CustomerGroup')->GroupContextCustomers(
                 CustomerUserID => $Param{UserID},
             );
 
-            next CONDITION if none { $AccessibleCustomers{$_} } $ConfigItem->{ 'DynamicField_' . $ConditionSet->{CustomerCompanyDynamicField} }->@*;
+            next CONDITION if none { $AccessibleCustomers{$_} } @CustomerCompanies;
         }
 
         # grant access
@@ -255,5 +280,43 @@ sub CustomerPermission {
     # don't grant access
     return;
 }
+
+# Rother OSS / ITSMConfigItemMultitenancy
+sub _ItemGroupCheck {
+    my ( $Self, %Param ) = @_;
+
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    # get config item data
+    my $ConfigItem = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
+        ConfigItemID => $Param{ItemID},
+    );
+
+    # if there is no GroupID attribute at all, exit because something is wrong
+    return unless exists $ConfigItem->{GroupID};
+
+    # the item permission group is optional, so grant access if it exists but is not set
+    my $ItemPermission = $ConfigItem->{GroupID};
+    return 1 unless $ItemPermission;
+
+    # get user groups
+    my %Groups = $Kernel::OM->Get('Kernel::System::Group')->GroupMemberList(
+        UserID => $Param{UserID},
+        Type   => $Param{Type},
+        Result => 'HASH',
+        Cached => 1,
+    );
+
+    my $ItemManagementGroup = $ConfigObject->Get('ITSMConfigItemManagementGroup');
+
+    # looking for group id, grant access if user is in group or is a member of the ci management group
+    for my $GroupID ( keys %Groups ) {
+        return 1 if $Groups{$GroupID} eq $ItemManagementGroup || $GroupID eq $ItemPermission;
+    }
+
+    # refuse access per default
+    return;
+}
+# EO ITSMConfigItemMultitenancy
 
 1;
