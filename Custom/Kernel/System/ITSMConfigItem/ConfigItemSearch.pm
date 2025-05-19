@@ -201,8 +201,10 @@ sub ConfigItemSearch {
     # get objects
     my $DBObject             = $Kernel::OM->Get('Kernel::System::DB');
     my $GeneralCatalogObject = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
-    my $ConfigObject         = $Kernel::OM->Get('Kernel::Config');
 
+# Rother OSS / ITSMConfigItemMultitenancy
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+# EO ITSMConfigItemMultitenancy
     # quote id array elements
     ARGUMENT:
     for my $Key (
@@ -341,16 +343,15 @@ sub ConfigItemSearch {
         }
 
         return if !@AllowedClassIDs;
-
         $Param{ClassIDs} = \@AllowedClassIDs;
 
+# Rother OSS/ ITSMConfigItemMultitenancy
         my %AllowedGroupsHash = $Kernel::OM->Get('Kernel::System::Group')->GroupMemberList(
             UserID => $Param{UserID},
             Type   => $Param{Permission} // 'ro',
             Result => 'HASH',
             Cached => 1,
         );
-
         return if !%AllowedGroupsHash;
 
         my $ItemManagementGroup = $ConfigObject->Get('ITSMConfigItemManagementGroup');
@@ -361,6 +362,7 @@ sub ConfigItemSearch {
             $Param{GroupIDs} = \@AllowedGroupIDs;
         }
     }
+# EO ITSMConfigItemMultitenancy
 
     # class ids
     if ( $Param{ClassIDs} ) {
@@ -373,6 +375,7 @@ sub ConfigItemSearch {
         $SQLExt .= ' AND ( ' . $SQLQueryInCondition . ' ) ';
     }
 
+# Rother OSS/ ITSMConfigItemMultitenancy
     # group ids
     if ( $Param{GroupIDs} ) {
         my $SQLQueryInCondition = $Kernel::OM->Get('Kernel::System::DB')->QueryInCondition(
@@ -385,10 +388,11 @@ sub ConfigItemSearch {
             $SQLExt .= ' AND ( ci.group_id IS NULL OR ' . $SQLQueryInCondition . ' ) ';
         }
         else {
-            # prevent sql syntax error if SQLQueryInCondition is empty
+            # if SQLQueryInCondition is empty
             $SQLExt .= ' AND ( ci.group_id IS NULL ) ';
         }
     }
+# EO ITSMConfigItemMultitenancy
 
     # lookup deployment states
     if ( $Param{DeplStates} ) {
