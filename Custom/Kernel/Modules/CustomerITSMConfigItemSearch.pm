@@ -421,6 +421,7 @@ sub Run {
             $SearchConfig{InciStates} = \@SearchInciStates;
         }
 
+# Rother OSS / ITSMConfigItemMultitenancy
         my $CustomerGroupObject  = $Kernel::OM->Get('Kernel::System::CustomerGroup');
         my %AuthorizedGroupsHash = $CustomerGroupObject->GroupMemberList(
             UserID => $Self->{UserID},
@@ -429,16 +430,16 @@ sub Run {
         );
         my @AuthorizedGroupIDs = keys %AuthorizedGroupsHash;
         $SearchConfig{GroupIDs} = \@AuthorizedGroupIDs;
+# EO ITSMConfigItemMultitenancy
 
         $SearchConfig{Number} = $GetParam{Number} ? $GetParam{Number} : undef;
         $SearchConfig{Name}   = $GetParam{Name}   ? $GetParam{Name}   : undef;
 
         # collect dynamic field search params
         if ( IsHashRefWithData( $PermissionConditionConfig->{DynamicFieldValues} ) ) {
-            my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+
             DYNAMICFIELD:
             for my $FieldName ( keys $PermissionConditionConfig->{DynamicFieldValues}->%* ) {
-                next DYNAMICFIELD unless $PermissionConditionConfig->{DynamicFieldValues}{$FieldName};
 
                 my $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
                     Name => $FieldName,
@@ -447,9 +448,16 @@ sub Run {
                 next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
                 next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
 
-                $SearchConfig{"DynamicField_$FieldName"} = {
-                    Equals => $PermissionConditionConfig->{DynamicFieldValues}{$FieldName},
-                };
+                if ( $PermissionConditionConfig->{DynamicFieldValues}{$FieldName} ) {
+                    $SearchConfig{"DynamicField_$FieldName"} = {
+                        Equals => $PermissionConditionConfig->{DynamicFieldValues}{$FieldName},
+                    };
+                }
+                elsif ( $PermissionConditionConfig->{DynamicFieldValues}{$FieldName} eq '' ) {
+                    $SearchConfig{"DynamicField_$FieldName"} = {
+                        Empty => 1,
+                    };
+                }
             }
         }
 
@@ -622,24 +630,24 @@ sub Run {
         if ( $Config->{Defaults} ) {
             KEY:
             for my $Key ( sort keys %{ $Config->{Defaults} } ) {
-                next KEY if !$Config->{Defaults}{$Key};
+                next KEY if !$Config->{Defaults}->{$Key};
                 next KEY if $Key eq 'DynamicField';
 
                 if ( $Key =~ /^ConfigItem(Create|Change)/ ) {
-                    my @Items = split /;/, $Config->{Defaults}{$Key};
+                    my @Items = split /;/, $Config->{Defaults}->{$Key};
                     for my $Item (@Items) {
                         my ( $Key, $Value ) = split /=/, $Item;
                         $Defaults{$Key} = $Value;
                     }
                 }
                 else {
-                    $Defaults{$Key} = $Config->{Defaults}{$Key};
+                    $Defaults{$Key} = $Config->{Defaults}->{$Key};
                 }
             }
         }
 
         # generate dropdown for selecting the permission condition
-        my %PermissionConditionData = map { int($_) => $PermissionConditionConfigs->{$_}{Name} } keys $PermissionConditionConfigs->%*;
+        my %PermissionConditionData = map { int($_) => $PermissionConditionConfigs->{$_}->{Name} } keys $PermissionConditionConfigs->%*;
         my $PermissionConditionStrg = $LayoutObject->BuildSelection(
             Data        => \%PermissionConditionData,
             Name        => 'PermissionCondition',
