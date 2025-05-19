@@ -366,6 +366,22 @@ sub ConfigItemGet {
     my @Row;
     if ( $Param{VersionID} ) {
 
+#        @Row = $Kernel::OM->Get('Kernel::System::DB')->SelectRowArray(
+#            SQL => <<'END_SQL',
+#SELECT ci.id, ci.configitem_number, ci.class_id, ci.last_version_id,
+#    ci.cur_depl_state_id, ci.cur_inci_state_id,
+#    v.id, v.name, v.version_string, v.definition_id, v.depl_state_id, v.inci_state_id, v.description,
+#    v.create_time, v.create_by, v.change_time, v.change_by
+#  FROM configitem_version v
+#  INNER JOIN configitem ci
+#    ON v.configitem_id = ci.id
+#  WHERE v.id = ?
+#END_SQL
+#            Bind  => [ \$Param{VersionID} ],
+#            Limit => 1,
+#        );
+
+# Rother OSS / ITSMConfigItemMultitenancy
         @Row = $Kernel::OM->Get('Kernel::System::DB')->SelectRowArray(
             SQL => <<'END_SQL',
 SELECT ci.id, ci.configitem_number, ci.class_id, ci.last_version_id,
@@ -380,11 +396,27 @@ END_SQL
             Bind  => [ \$Param{VersionID} ],
             Limit => 1,
         );
+# EO ITSMConfigItemMultitenancy
     }
 
     # get latest ConfigItemVersion
     else {
+#        @Row = $Kernel::OM->Get('Kernel::System::DB')->SelectRowArray(
+#            SQL => <<'END_SQL',
+#SELECT ci.id, ci.configitem_number, ci.class_id, ci.last_version_id,
+#    ci.cur_depl_state_id, ci.cur_inci_state_id,
+#    v.id, v.name, v.version_string, v.definition_id, v.depl_state_id, v.inci_state_id, v.description,
+#    ci.create_time, ci.create_by, ci.change_time, ci.change_by
+#  FROM configitem ci
+#  LEFT JOIN configitem_version v
+#    ON ci.last_version_id = v.id
+#  WHERE ci.id = ?
+#END_SQL
+#            Bind  => [ \$Param{ConfigItemID} ],
+#            Limit => 1,
+#        );
 
+# Rother OSS / ITSMConfigItemMultitenancy
         @Row = $Kernel::OM->Get('Kernel::System::DB')->SelectRowArray(
             SQL => <<'END_SQL',
 SELECT ci.id, ci.configitem_number, ci.class_id, ci.last_version_id,
@@ -399,6 +431,7 @@ END_SQL
             Bind  => [ \$Param{ConfigItemID} ],
             Limit => 1,
         );
+# EO ITSMConfigItemMultitenancy
     }
 
     # fetch the result
@@ -420,7 +453,9 @@ END_SQL
     $ConfigItem{CreateBy}       = $Row[14];
     $ConfigItem{ChangeTime}     = $Row[15];
     $ConfigItem{ChangeBy}       = $Row[16];
-    $ConfigItem{GroupID}        = $Row[17];
+# Rother OSS / ITSMConfigItemMultitenancy
+    $ConfigItem{GroupID} = $Row[17];
+# EO ITSMConfigItemMultitenancy
 
     # check config item
     if ( !$ConfigItem{ConfigItemID} ) {
@@ -685,7 +720,18 @@ sub ConfigItemAdd {
         return;
     }
 
+#    # insert new config item
+#    $Kernel::OM->Get('Kernel::System::DB')->Do(
+#        SQL => 'INSERT INTO configitem ('
+#            . 'configitem_number, cur_depl_state_id, cur_inci_state_id'
+#            . ', class_id, create_time, create_by, change_time, change_by'
+#            . ') VALUES (?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
+#        Bind => [ \$Param{Number}, \$Param{DeplStateID}, \$Param{InciStateID}, \$Param{ClassID}, \$Param{UserID}, \$Param{UserID} ],
+#    );
+
+# Rother OSS / ITSMConfigItemMultitenancy
     my $GroupID = $Param{GroupID} ? $Param{GroupID} : undef;
+
     # insert new config item
     $Kernel::OM->Get('Kernel::System::DB')->Do(
         SQL => 'INSERT INTO configitem ('
@@ -694,6 +740,7 @@ sub ConfigItemAdd {
             . ') VALUES (?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?, ?)',
         Bind => [ \$Param{Number}, \$Param{DeplStateID}, \$Param{InciStateID}, \$Param{ClassID}, \$Param{UserID}, \$Param{UserID}, \$GroupID ],
     );
+# EO ITSMConfigItemMultitenancy
 
     # find id of new item
     # TODO: what about concurrent INSERTs ???
@@ -709,7 +756,6 @@ END_SQL
     );
 
     # trigger ConfigItemCreate
-    # TODO: is it sane when events are triggered before the config item is complete ?
     $Self->EventHandler(
         Event => 'ConfigItemCreate',
         Data  => {
@@ -1039,7 +1085,7 @@ sub ConfigItemUpdate {
 
     # check name, deployment and incident state, as well as Description
     ATTR:
-    for my $Attribute (qw/Name DeplStateID InciStateID GroupID/) {
+    for my $Attribute (qw/Name DeplStateID InciStateID Description/) {
         next ATTR unless defined $Param{$Attribute};
         next ATTR if $Param{$Attribute} eq $ConfigItem->{$Attribute};
 
@@ -1121,7 +1167,6 @@ sub ConfigItemUpdate {
         Name        => 'NameUpdate',
         DeplStateID => 'DeploymentStateUpdate',
         InciStateID => 'IncidentStateUpdate',
-        GroupID     => 'GroupUpdate',
     );
 
     CHANGE:
@@ -2245,9 +2290,8 @@ sub _PrepareLikeString {
 
 =head1 ITSM Config Item events:
 
-ConfigItemCreate, VersionCreate, DeploymentStateUpdate, IncidentStateUpdate,
-ConfigItemDelete, LinkAdd, LinkDelete, DefinitionUpdate, NameUpdate, ValueUpdate
-DefinitionCreate, VersionDelete
+ConfigItemCreate, ConfigItemUpdate, VersionCreate, VersionUpdate, DeploymentStateUpdate, IncidentStateUpdate,
+ConfigItemDelete, LinkAdd, LinkDelete, DefinitionUpdate, NameUpdate, DefinitionCreate, VersionDelete
 
 =cut
 
