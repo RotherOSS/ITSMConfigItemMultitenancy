@@ -312,7 +312,7 @@ sub Run {
             my $ManagementGroup = $ConfigObject->Get("ITSMConfigItemManagementGroup");
             my %UserGroupsList  = $GroupObject->PermissionUserGroupGet(
                 UserID => $UserID,
-                Type   => "ro",
+                Type   => "rw",
             );
             if ( $ManagementGroup && grep { $_ eq $ManagementGroup } values %UserGroupsList ) {
                 %AuthGroups = $GroupObject->GroupList(
