@@ -45,15 +45,6 @@
                 <Reference Local="group_id" Foreign="id" />
             </ForeignKey>
         </TableAlter>
-        <Insert Table="groups_table">
-            <Data Key="name" Type="Quote">itsm-configitem-manager</Data>
-            <Data Key="comments" Type="Quote">Group for ITSM ConfigItem group restrictions management.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
     </DatabaseInstall>
     <DatabaseUninstall Type="pre">
         <TableAlter Name="configitem">

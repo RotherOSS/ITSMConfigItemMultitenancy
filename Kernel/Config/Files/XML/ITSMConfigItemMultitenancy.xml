@@ -5,7 +5,7 @@
         <Description Translatable="1">Management group that exempts from any config item level group restrictions.</Description>
         <Navigation>Core::GeneralCatalog</Navigation>
         <Value>
-            <Item ValueType="String">itsm-configitem-manager</Item>
+            <Item ValueType="String">admin</Item>
         </Value>
     </Setting>
     <Setting Name="GeneralCatalogPreferences###ConfigitemGroup" Required="0" Valid="1">
@@ -31,17 +31,6 @@
             </Hash>
         </Value>
     </Setting>    
-    <Setting Name="ITSMConfigItem::Permission::Item###010-ItemGroupCheck" Required="0" Valid="1">
-        <Description Translatable="1">Module to check the group responsible for an individual instance of a configuration item.</Description>
-        <Navigation>Core::ITSMConfigItem</Navigation>
-        <Value>
-            <Hash>
-                <Item Key="Module">Kernel::System::ITSMConfigItem::Permission::ItemGroupCheck</Item>
-                <Item Key="Required">0</Item>
-                <Item Key="Granted">1</Item>
-            </Hash>
-        </Value>
-    </Setting>
 
     <!-- Override these original ITSMConfigItem settings to insert the GroupUpdate event -->
     <Setting Name="ITSMConfigItem::EventModulePost###100-History" Required="0" Valid="1">
@@ -50,7 +39,7 @@
         <Value>
             <Hash>
                 <Item Key="Module">Kernel::System::ITSMConfigItem::Event::DoHistory</Item>
-                <Item Key="Event">(ConfigItemCreate|VersionCreate|DeploymentStateUpdate|IncidentStateUpdate|GroupUpdate|ConfigItemDelete|LinkAdd|LinkDelete|DefinitionUpdate|NameUpdate|ValueUpdate|VersionDelete|AttachmentAddPost|AttachmentDeletePost|ConfigItemDynamicField)</Item>
+                <Item Key="Event">(ConfigItemCreate|VersionCreate|DeploymentStateUpdate|IncidentStateUpdate|ConfigItemDelete|LinkAdd|LinkDelete|DefinitionUpdate|NameUpdate|VersionDelete|AttachmentAddPost|AttachmentDeletePost|ConfigItemDynamicField|GroupUpdate|ConfigItemUpdate|VersionUpdate)</Item>
                 <Item Key="Transaction">0</Item>
             </Hash>
         </Value>
@@ -61,16 +50,18 @@
         <Value>
             <Array>
                 <Item>ConfigItemCreate</Item>
+                <Item>ConfigItemUpdate</Item>
                 <Item>VersionCreate</Item>
+                <Item>VersionUpdate</Item>
                 <Item>DeploymentStateUpdate</Item>
                 <Item>IncidentStateUpdate</Item>
-                <Item>GroupUpdate</Item>
                 <Item>ConfigItemDelete</Item>
-                <Item>ValueUpdate</Item>
                 <Item>NameUpdate</Item>
                 <Item>AttachmentAddPost</Item>
                 <Item>AttachmentDeletePost</Item>
                 <Item>VersionDelete</Item>
+                <Item>VersionUpdate</Item>
+                <Item>GroupUpdate</Item>
             </Array>
         </Value>
     </Setting>
