@@ -23,7 +23,6 @@
         <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem/ConfigItemSearch.pm" />
         <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem/Event/DoHistory.pm" />
         <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem/Permission.pm" />
-        <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem/Version.pm" />
         <File Permission="660" Location="Kernel/Config/Files/XML/ITSMConfigItemMultitenancy.xml" />        
     </Filelist>
     <IntroInstall Type="post" Title="Convert legacy reference fields" Lang="en"><![CDATA[
@@ -39,18 +38,9 @@
                 <Reference Local="group_id" Foreign="id" />
             </ForeignKey>
         </TableAlter>
-        <TableAlter Name="configitem_version">
-            <ColumnAdd Name="group_id" Type="INT" />
-            <ForeignKey ForeignTable="groups_table">
-                <Reference Local="group_id" Foreign="id" />
-            </ForeignKey>
-        </TableAlter>
     </DatabaseInstall>
     <DatabaseUninstall Type="pre">
         <TableAlter Name="configitem">
-            <ColumnDrop Name="group_id" />
-        </TableAlter>
-        <TableAlter Name="configitem_version">
             <ColumnDrop Name="group_id" />
         </TableAlter>
     </DatabaseUninstall>

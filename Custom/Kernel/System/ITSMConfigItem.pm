@@ -387,7 +387,7 @@ sub ConfigItemGet {
 SELECT ci.id, ci.configitem_number, ci.class_id, ci.last_version_id,
     ci.cur_depl_state_id, ci.cur_inci_state_id,
     v.id, v.name, v.version_string, v.definition_id, v.depl_state_id, v.inci_state_id, v.description,
-    v.create_time, v.create_by, v.change_time, v.change_by, v.group_id
+    v.create_time, v.create_by, v.change_time, v.change_by, ci.group_id
   FROM configitem_version v
   INNER JOIN configitem ci
     ON v.configitem_id = ci.id
@@ -422,7 +422,7 @@ END_SQL
 SELECT ci.id, ci.configitem_number, ci.class_id, ci.last_version_id,
     ci.cur_depl_state_id, ci.cur_inci_state_id,
     v.id, v.name, v.version_string, v.definition_id, v.depl_state_id, v.inci_state_id, v.description,
-    ci.create_time, ci.create_by, ci.change_time, ci.change_by, v.group_id
+    ci.create_time, ci.create_by, ci.change_time, ci.change_by, ci.group_id
   FROM configitem ci
   LEFT JOIN configitem_version v
     ON ci.last_version_id = v.id
@@ -1000,6 +1000,10 @@ sub ConfigItemUpdate {
             return;
         }
     }
+# Rother OSS / ITSMConfigItemMultitenancy
+    # get needed objects
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+# EO ITSMConfigItemMultitenancy
 
     # gather dynamic field keys
     my @DynamicFieldNames = map
@@ -1083,9 +1087,24 @@ sub ConfigItemUpdate {
     my $AddVersion    = 0;    # flag for deciding whether a new version is created
     my $UpdateVersion = 0;    # flag for deciding whether the current version needs an update
 
-    # check name, deployment and incident state, as well as Description
+#    # check name, deployment and incident state, as well as Description
+#    ATTR:
+#    for my $Attribute (qw/Name DeplStateID InciStateID Description/) {
+#        next ATTR unless defined $Param{$Attribute};
+#        next ATTR if $Param{$Attribute} eq $ConfigItem->{$Attribute};
+#
+#        $Changed{$Attribute} = {
+#            Old => $ConfigItem->{$Attribute},
+#            New => $Param{$Attribute},
+#        };
+#
+#        $UpdateVersion = 1;
+# Rother OSS / ITSMConfigItemMultitenancy    
+    my $UpdateGroupID = 0;    # flag for deciding whether the current group id needs an update
+
+    # check name, deployment and incident state, as well as Description and group
     ATTR:
-    for my $Attribute (qw/Name DeplStateID InciStateID Description/) {
+    for my $Attribute (qw/Name DeplStateID InciStateID Description GroupID/) {
         next ATTR unless defined $Param{$Attribute};
         next ATTR if $Param{$Attribute} eq $ConfigItem->{$Attribute};
 
@@ -1094,12 +1113,29 @@ sub ConfigItemUpdate {
             New => $Param{$Attribute},
         };
 
-        $UpdateVersion = 1;
+        # changes to GroupID should not trigger VersionAdd or VersionUpdate
+        # Thus its update has to be performed locally in this module
+        if ($Attribute eq 'GroupID') {
+            $UpdateGroupID = 1;
+        }
+        else {
+            $UpdateVersion = 1;
+        }
 
         if ( $VersionTrigger{$Attribute} ) {
             $AddVersion = 1;
         }
     }
+
+    # check the corner case in which the GroupID was updated to null
+    if ($ConfigItem->{GroupID} && !$Param{GroupID}) {
+        $UpdateGroupID = 1;
+        $Changed{GroupID} = {
+            Old => $ConfigItem->{GroupID},
+            New => undef,
+        };
+    }
+# EO ITSMConfigItemMultitenancy
 
     # get latest definition for the class
     my $Definition = $Self->DefinitionGet(
@@ -1145,6 +1181,41 @@ sub ConfigItemUpdate {
             }
         }
     }
+# Rother OSS / ITSMConfigItemMultitenancy
+    if ($UpdateGroupID) {
+
+        # update current group id
+        my $Success = $Kernel::OM->Get('Kernel::System::DB')->Do(
+            SQL  => 'UPDATE configitem SET group_id = ? WHERE id = ?',
+            Bind => [ \$Changed{GroupID}{New}, \$Param{ConfigItemID} ],
+        );        
+
+        # Clear the cache for ConfigItemGet
+        my $VersionList = $Self->VersionList(
+            ConfigItemID => $Param{ConfigItemID},
+        );
+        for my $DFData (qw(0 1)) {
+            for my $VersionID ($VersionList->@*) {
+                $CacheObject->Delete(
+                    Type => $Self->{CacheType},
+                    Key  => join(
+                        '::', 'ConfigItemGet',
+                        VersionID => $VersionID,
+                        DFData    => $DFData
+                    ),
+                );
+            }
+            $CacheObject->Delete(
+                Type => $Self->{CacheType},
+                Key  => join(
+                    '::', 'ConfigItemGet',
+                    ConfigItemID => $Param{ConfigItemID},
+                    DFData       => $DFData
+                ),
+            );
+        }
+    }
+# EO ITSMConfigItemMultitenancy
 
     if ($AddVersion) {
         my $Success = $Self->VersionAdd(
