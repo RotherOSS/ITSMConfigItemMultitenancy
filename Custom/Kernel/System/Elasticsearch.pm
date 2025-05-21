@@ -251,7 +251,7 @@ sub TicketSearch {
                         CustomerIDs => \@MergedCustomerIDs,
                     };
                 }
-                push @{ $CustomerIDCombinations{$CustomerIDString}{GroupIDs} }, $GroupID;
+                push @{ $CustomerIDCombinations{$CustomerIDString}->{GroupIDs} }, $GroupID;
             }
 
             # add to query combinations
@@ -598,10 +598,8 @@ Performs a config item search via Elasticsearch.
 sub ConfigItemSearch {
     my ( $Self, %Param ) = @_;
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-    my $GroupObject  = $Kernel::OM->Get('Kernel::System::Group');
-
-    my $ResultType = $Param{Result} || 'ARRAY';
-    my $Limit      = $Param{Limit}  || 10000;
+    my $ResultType   = $Param{Result} || 'ARRAY';
+    my $Limit        = $Param{Limit}  || 10000;
 
     # check required params
     for my $Needed (qw/UserID Fulltext/) {
@@ -639,18 +637,21 @@ sub ConfigItemSearch {
         delete $ClassList->{$ClassID} if !$HasAccess;
     }
 
-    # check for access rights on the items group if item group permission is enabled for the class
-    for my $ClassID ( sort keys %{$ClassList} ) {
-        my $HasAccess = $ConfigItemObject->Permission(
-            Type    => 'ro',
-            Scope   => 'Class',
-            ClassID => $ClassID,
-            UserID  => $Param{UserID},
-        );
-
-        delete $ClassList->{$ClassID} if !$HasAccess;
-    }
-
+#    # set up class filter corresponding to the access rights
+#    push @Filters, {
+#        bool => {
+#            filter => [
+#                {
+#                    terms => {
+#                        ClassID => [ keys %{$ClassList} ],
+#                    },
+#                },
+#            ],
+#        },
+#    };
+#
+# Rother OSS / ITSMConfigItemMultitenancy
+    my $GroupObject = $Kernel::OM->Get('Kernel::System::Group');
     my %GroupList;
     my %AuthGroupsList = $GroupObject->PermissionUserGroupGet(
         UserID => $Self->{UserID},
@@ -667,7 +668,8 @@ sub ConfigItemSearch {
     }
 
     # set up class and group filter corresponding to the access rights
-    # IMPORTANT TODO! - the search must include an OR for items whose GroupID is null
+    # classes with no group restrictions should not be affected by the group filtering
+    # for these classes the search includes items whose GroupID is null
     push @Filters, {
         bool => {
             filter => [
@@ -677,9 +679,19 @@ sub ConfigItemSearch {
                         GroupID => [ keys %{%GroupList} ],
                     },
                 },
+                {
+                    bool => {
+                        must_not => {
+                            exists => {
+                                field => 'GroupID'
+                            }
+                        }
+                    }
+                }
             ],
         },
     };
+# EO ITSMConfigItemMultitenancy
 
     if ( defined $Param{Fulltext} ) {
 
