@@ -422,14 +422,16 @@ sub Run {
         }
 
 # Rother OSS / ITSMConfigItemMultitenancy
-        my $CustomerGroupObject  = $Kernel::OM->Get('Kernel::System::CustomerGroup');
-        my %AuthorizedGroupsHash = $CustomerGroupObject->GroupMemberList(
-            UserID => $Self->{UserID},
-            Type   => 'ro',
-            Result => 'HASH',
-        );
-        my @AuthorizedGroupIDs = keys %AuthorizedGroupsHash;
-        $SearchConfig{GroupIDs} = \@AuthorizedGroupIDs;
+        if ( $ConfigObject->Get('CustomerGroupSupport') ) {
+            my $CustomerGroupObject  = $Kernel::OM->Get('Kernel::System::CustomerGroup');
+            my %AuthorizedGroupsHash = $CustomerGroupObject->GroupMemberList(
+                UserID => $Self->{UserID},
+                Type   => 'ro',
+                Result => 'HASH',
+            );
+            my @AuthorizedGroupIDs = keys %AuthorizedGroupsHash;
+            $SearchConfig{GroupIDs} = \@AuthorizedGroupIDs;
+        }
 # EO ITSMConfigItemMultitenancy
 
         $SearchConfig{Number} = $GetParam{Number} ? $GetParam{Number} : undef;

@@ -120,7 +120,7 @@ sub Run {
 
         # if filter is not present in the web request, try with the user preferences
         if ( $FilterValue eq '' ) {
-            $FilterValue = $StoredFilters->{ $ColumnName . 'IDs' }[0] || '';
+            $FilterValue = $StoredFilters->{ $ColumnName . 'IDs' }->[0] || '';
         }
         next COLUMNNAME if $FilterValue eq '';
         next COLUMNNAME if $FilterValue eq 'DeleteFilter';
@@ -283,13 +283,6 @@ sub Run {
                     }
                 }
             }
-            my $CustomerGroupObject  = $Kernel::OM->Get('Kernel::System::CustomerGroup');
-            my %AuthorizedGroupsHash = $CustomerGroupObject->GroupMemberList(
-                UserID => $Self->{UserID},
-                Type   => 'ro',
-                Result => 'HASH',
-            );
-            my @AuthorizedGroupIDs = keys %AuthorizedGroupsHash;
             my %PermissionConditionSearchParams;
             if ( $PermissionConditionConfig->{CustomerCompanyDynamicField} ) {
                 $PermissionConditionSearchParams{"DynamicField_$PermissionConditionConfig->{CustomerCompanyDynamicField}"} = {
@@ -305,13 +298,23 @@ sub Run {
             my %FilterSearch = (
                 Classes    => $PermissionConditionConfig->{Classes},
                 DeplStates => $PermissionConditionConfig->{DeploymentStates},
-                GroupIDs   => \@AuthorizedGroupIDs,
                 %DFSearchParams,
                 %PermissionConditionSearchParams,
                 %Sort,
                 Limit => $Self->{SearchLimit} // '1000',
             );
-
+# Rother OSS / ITSMConfigItemMultitenancy
+            if ( $ConfigObject->Get('CustomerGroupSupport') ) {
+                my $CustomerGroupObject  = $Kernel::OM->Get('Kernel::System::CustomerGroup');
+                my %AuthorizedGroupsHash = $CustomerGroupObject->GroupMemberList(
+                    UserID => $Self->{UserID},
+                    Type   => 'ro',
+                    Result => 'HASH',
+                );
+                my @AuthorizedGroupIDs = keys %AuthorizedGroupsHash;
+                $FilterSearch{GroupIDs} = \@AuthorizedGroupIDs;
+            }
+# EO ITSMConfigItemMultitenancy
             # apply filter restrictions to search for
             if ( $GetColumnFilter{Class} ) {
                 if ( $PermissionConditionConfig->{Classes}->@* ) {
@@ -493,7 +496,7 @@ sub Run {
             )
         {
             @OriginalViewableConfigItems = $ConfigItemObject->ConfigItemSearch(
-                %{ $Filters{$Filter}{Search} },
+                %{ $Filters{$Filter}->{Search} },
                 %ColumnFilter,
                 Limit  => $Limit,
                 Result => 'ARRAY',
@@ -512,7 +515,7 @@ sub Run {
             );
 
             @ViewableConfigItems = $ConfigItemObject->ConfigItemSearch(
-                %{ $Filters{$Filter}{Search} },
+                %{ $Filters{$Filter}->{Search} },
                 %ColumnFilter,
                 Limit  => $StartHit + $PageShown - 1,
                 Result => 'ARRAY',
@@ -574,7 +577,7 @@ sub Run {
         my $Count = 0;
         if (@ViewableDeplStateIDs) {
             $Count = $ConfigItemObject->ConfigItemSearch(
-                %{ $Filters{$FilterColumn}{Search} },
+                %{ $Filters{$FilterColumn}->{Search} },
                 %ColumnFilter,
                 Result => 'COUNT',
             ) || 0;
@@ -584,7 +587,7 @@ sub Run {
             $CountTotal = $Count;
         }
 
-        $NavBarFilter{ $Filters{$FilterColumn}{Prio} } = {
+        $NavBarFilter{ $Filters{$FilterColumn}->{Prio} } = {
             Count  => $Count,
             Filter => $FilterColumn,
             %{ $Filters{$FilterColumn} },
@@ -604,7 +607,7 @@ sub Run {
         RequestedURL          => $Self->{RequestedURL},
         View                  => $View,
         TitleName             => $LayoutObject->{LanguageObject}->Translate('Overview: ITSM ConfigItem'),
-        TitleValue            => $Self->{Filters}{$Filter}{Name},
+        TitleValue            => $Self->{Filters}{$Filter}->{Name},
         Env                   => $Self,
         LinkPage              => $LinkPage,
         LinkSort              => $LinkSort,

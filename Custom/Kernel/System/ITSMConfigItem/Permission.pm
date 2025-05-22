@@ -196,6 +196,23 @@ sub CustomerPermission {
         DynamicFields => any { $_->{CustomerUserDynamicField} || $_->{CustomerCompanyDynamicField} } values %Conditions,
     );
 
+# Rother OSS / ITSMConfigItemMultitenancy
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+    if ( $ConfigObject->Get('CustomerGroupSupport') ) {
+        %GroupLookup = reverse $CustomerGroupObject->GroupMemberList(
+                UserID => $Param{UserID},
+                Type   => 'ro',
+                Result => 'HASH',
+            );
+
+        # the attribute group_id must exist in the CI, even if null, otherwise there is a security gap
+        return if !exists $ConfigItem->{GroupID};
+
+        # if group_id is defined, then it must belong to one of the customer user's authorized groups
+        return if $ConfigItem->{GroupID} && none { $_ eq $ConfigItem->{GroupID} } values %GroupLookup;
+    }
+# EO ITSMConfigItemMultitenancy
+
     CONDITION:
     for my $ConditionSet ( values %Conditions ) {
         if ( $ConditionSet->{Groups} && $ConditionSet->{Groups}->@* ) {
