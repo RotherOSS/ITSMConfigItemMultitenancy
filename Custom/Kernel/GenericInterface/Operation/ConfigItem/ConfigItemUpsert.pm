@@ -135,7 +135,7 @@ sub Run {
 
     # check needed stuff
     for my $Needed (qw(ConfigItem)) {
-        if ( !$Param{Data}{$Needed} ) {
+        if ( !$Param{Data}->{$Needed} ) {
             return $Self->ReturnError(
                 ErrorCode    => "$Self->{OperationName}.MissingParameter",
                 ErrorMessage => "$Self->{OperationName}: $Needed parameter is missing!",
@@ -146,9 +146,9 @@ sub Run {
     # check optional array/hashes
     for my $Optional (qw(DynamicField Attachment)) {
         if (
-            defined $Param{Data}{$Optional}
-            && !IsHashRefWithData( $Param{Data}{$Optional} )
-            && !IsArrayRefWithData( $Param{Data}{$Optional} )
+            defined $Param{Data}->{$Optional}
+            && !IsHashRefWithData( $Param{Data}->{$Optional} )
+            && !IsArrayRefWithData( $Param{Data}->{$Optional} )
             )
         {
             return $Self->ReturnError(
@@ -157,13 +157,14 @@ sub Run {
             );
         }
     }
-
+# Rother OSS / ITSMConfigItemMultitenancy
     my $ConfigObject         = $Kernel::OM->Get('Kernel::Config');
     my $GroupObject          = $Kernel::OM->Get('Kernel::System::Group');
     my $GeneralCatalogObject = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
 
-    my $ErrorMessage = '';
     my $ItemGroupMode;
+# EO ITSMConfigItemMultitenancy
+    my $ErrorMessage = '';
 
     # transform single CIs to an array reference
     if ( !IsArrayRefWithData( $Param{Data}{ConfigItem} ) ) {
@@ -179,7 +180,7 @@ sub Run {
         }
 
         my @RequiredAttributes = qw(Class DeploymentState IncidentState);
-
+# Rother OSS / ITSMConfigItemMultitenancy
         my $ClassPreferences = $GeneralCatalogObject->ItemGet(
             Class => 'ITSM::ConfigItem::Class',
             Name  => $RemoteCIData->{Class},
@@ -197,7 +198,7 @@ sub Run {
                 );
             }
         }
-
+# EO ITSMConfigItemMultitenancy
         for my $Needed ( sort @RequiredAttributes ) {
 
             if ( !IsStringWithData( $RemoteCIData->{$Needed} ) ) {
@@ -215,10 +216,10 @@ sub Run {
     );
 
     # get operation config
-    my $OperationConfig = $Webservice->{Config}{Provider}{Operation}{ $Self->{Operation} };
+    my $OperationConfig = $Webservice->{Config}->{Provider}->{Operation}->{ $Self->{Operation} };
 
     my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
-
+#    my $GeneralCatalogObject = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
     my %CIClassMapping = (
         IncidentState   => 'ITSM::Core::IncidentState',
         DeploymentState => 'ITSM::ConfigItem::DeploymentState',
@@ -303,7 +304,7 @@ sub Run {
             }
             $RequiredAttributes{ $CurrentCI . 'ID' } = $GeneralCatalogItem->{ItemID};
         }
-
+# Rother OSS / ITSMConfigItemMultitenancy
         # get ID for the Group
         # users from the itsm management group can assign the CI to any group, others can assign only to one of their groups
         # attempting to assign a non authorized group returns the same result as assigning a non existing group
@@ -331,7 +332,7 @@ sub Run {
                 );
             }
         }
-
+# EO ITSMConfigItemMultitenancy
         my $Identifier = $OperationConfig->{ 'Identifier' . $RequiredAttributes{ClassID} };
         if ( !$Identifier ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
@@ -433,7 +434,7 @@ sub Run {
                 Scope  => 'Item',
                 ItemID => $ConfigItemID,
                 UserID => $UserID,
-                Type   => $Self->{Config}{Permission},
+                Type   => $Self->{Config}->{Permission},
             );
         }
         else {
@@ -441,7 +442,7 @@ sub Run {
                 Scope   => 'Class',
                 ClassID => $RequiredAttributes{ClassID},
                 UserID  => $UserID,
-                Type    => $Self->{Config}{Permission},
+                Type    => $Self->{Config}->{Permission},
             );
         }
 
