@@ -637,7 +637,7 @@ sub ConfigItemSearch {
         delete $ClassList->{$ClassID} if !$HasAccess;
     }
 
-#    # set up class filter corresponding to the access rights
+    # set up class filter corresponding to the access rights
 #    push @Filters, {
 #        bool => {
 #            filter => [
@@ -905,6 +905,7 @@ sub ConfigItemCreate {
     }
 
     my $RequesterObject = $Kernel::OM->Get('Kernel::GenericInterface::Requester');
+    my $ConfigObject    = $Kernel::OM->Get('Kernel::Config');
 
     # create the config item
     my $Result = $RequesterObject->Run(
@@ -930,7 +931,12 @@ sub ConfigItemCreate {
     );
 
     # update the attachments
-    if ( $Kernel::OM->Get('Kernel::Config')->Get('Elasticsearch::ConfigItemSearchFields')->{'Attachments'} ) {
+    if (
+        $ConfigObject->Get('Elasticsearch::ConfigItemSearchFields')
+        &&
+        $ConfigObject->Get('Elasticsearch::ConfigItemSearchFields')->{'Attachments'}
+        )
+    {
         my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
 
         my @Attachments = $ConfigItemObject->ConfigItemAttachmentList(
