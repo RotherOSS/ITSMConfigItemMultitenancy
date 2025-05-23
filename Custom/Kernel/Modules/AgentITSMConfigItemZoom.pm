@@ -119,21 +119,21 @@ sub Run {
         for my $Menu ( sort keys %Menus ) {
 
             # load module
-            if ( $Kernel::OM->Get('Kernel::System::Main')->Require( $Menus{$Menu}{Module} ) ) {
+            if ( $Kernel::OM->Get('Kernel::System::Main')->Require( $Menus{$Menu}->{Module} ) ) {
 
-                my $Object = $Menus{$Menu}{Module}->new(
+                my $Object = $Menus{$Menu}->{Module}->new(
                     %{$Self},
                     ConfigItemID => $Self->{ConfigItemID},
                 );
 
                 # set classes
-                if ( $Menus{$Menu}{Target} ) {
+                if ( $Menus{$Menu}->{Target} ) {
 
-                    if ( $Menus{$Menu}{Target} eq 'PopUp' ) {
-                        $Menus{$Menu}{MenuClass} = 'AsPopup';
+                    if ( $Menus{$Menu}->{Target} eq 'PopUp' ) {
+                        $Menus{$Menu}->{MenuClass} = 'AsPopup';
                     }
-                    elsif ( $Menus{$Menu}{Target} eq 'Back' ) {
-                        $Menus{$Menu}{MenuClass} = 'HistoryBack';
+                    elsif ( $Menus{$Menu}->{Target} eq 'Back' ) {
+                        $Menus{$Menu}->{MenuClass} = 'HistoryBack';
                     }
 
                 }
@@ -385,7 +385,7 @@ sub Run {
             CurDeplSignal => $DeplSignals{ $ConfigItem->{CurDeplState} },
         },
     );
-
+# Rother OSS / ITSMConfigItemMultitenancy
     # display config item permission group in the meta block if that feature is enabled for the class
     my %ClassPreferences = $GeneralCatalogObject->GeneralCatalogPreferencesGet(
         ItemID => $ConfigItem->{ClassID},
@@ -406,7 +406,7 @@ sub Run {
             },
         );
     }
-
+# EO ITSMConfigItemMultitenancy
     # get linked objects
     my $LinkListWithData = $Kernel::OM->Get('Kernel::System::LinkObject')->LinkListWithData(
         Object => 'ITSMConfigItem',

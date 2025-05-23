@@ -65,11 +65,14 @@
                             [% Translate(Data.CurInciState) | html %]
                         </div>
                         <div class="Clear"></div>
+
+# Rother OSS / ITSMConfigItemMultitenancy
 [% RenderBlockStart("Group") %]
                         <label>[% Translate("Group") | html %]:</label>
                         <p class="Value">[% Data.GroupName | truncate(25) | html %]</p>
                         <div class="Clear"></div>
 [% RenderBlockEnd("Group") %]
+# EO ITSMConfigItemMultitenancy
                         <label>[% Translate("Created") | html %]:</label>
                         <p class="Value">[% Data.CreateTime | Localize("TimeLong") %]</p>
                         <div class="Clear"></div>

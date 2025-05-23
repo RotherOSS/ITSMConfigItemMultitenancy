@@ -58,7 +58,9 @@ sub Run {
     my $ConfigItemObject          = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
     my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
     my $GeneralCatalogObject      = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
+# Rother OSS / ITSMConfigItemMultitenancy
     my $GroupObject               = $Kernel::OM->Get('Kernel::System::Group');
+# EO ITSMConfigItemMultitenancy    
     my $ConfigObject              = $Kernel::OM->Get('Kernel::Config');
     my $LayoutObject              = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
 
@@ -73,7 +75,7 @@ sub Run {
             Scope  => 'Item',
             ItemID => $ConfigItem->{ConfigItemID},
             UserID => $Self->{UserID},
-            Type   => $Self->{Config}{Permission},
+            Type   => $Self->{Config}->{Permission},
         );
 
         # get config item
@@ -99,7 +101,7 @@ sub Run {
             Scope  => 'Item',
             ItemID => $ConfigItem->{ConfigItemID},
             UserID => $Self->{UserID},
-            Type   => $Self->{Config}{Permission},
+            Type   => $Self->{Config}->{Permission},
         );
 
         # set config item id and number
@@ -117,7 +119,7 @@ sub Run {
             Scope   => 'Class',
             ClassID => $ConfigItem->{ClassID},
             UserID  => $Self->{UserID},
-            Type    => $Self->{Config}{Permission},
+            Type    => $Self->{Config}->{Permission},
         );
 
         # get class list
@@ -177,7 +179,10 @@ sub Run {
             if ($DuplicateID) {
 
                 # get Data from duplicate CI
+#                for my $Param (qw(Name VersionString DeplStateID InciStateID Description)) {
+# Rother OSS / ITSMConfigItemMultitenancy
                 for my $Param (qw(Name VersionString DeplStateID InciStateID Description GroupID)) {
+# EO ITSMConfigItemMultitenancy                    
                     $GetParam{$Param} = $ConfigItem->{$Param};
                 }
 
@@ -211,7 +216,9 @@ sub Run {
 
         else {
             # get general form data
+#            for my $Param (qw(Name VersionString DeplStateID InciStateID Description)) {
             for my $Param (qw(Name VersionString DeplStateID InciStateID Description GroupID)) {
+# EO ITSMConfigItemMultitenancy                
                 $GetParam{$Param} = $ConfigItem->{$Param};
             }
 
@@ -246,7 +253,10 @@ sub Run {
         }
 
         # get general form data
+#        for my $Param (qw(Name VersionString DeplStateID InciStateID Description)) {
+# Rother OSS / ITSMConfigItemMultitenancy            
         for my $Param (qw(Name VersionString DeplStateID InciStateID Description GroupID)) {
+# EO ITSMConfigItemMultitenancy            
             $GetParam{$Param} = $ParamObject->GetParam( Param => $Param );
         }
 
@@ -272,8 +282,10 @@ sub Run {
             }
         }
     }
-
+#    my @UpdatableFields = qw(DeplStateID InciStateID Description);
+# Rother OSS / ITSMConfigItemMultitenancy
     my @UpdatableFields = qw(DeplStateID InciStateID Description GroupID);
+# EO ITSMConfigItemMultitenancy    
     push @UpdatableFields, keys %ACLReducibleDynamicFields;
 
     # convert dynamic field values into a structure for ACLs
@@ -396,7 +408,10 @@ sub Run {
         my $AllRequired = 1;
 
         # get general form data
+#        for my $Param (qw(DeplStateID InciStateID Description)) {
+# Rother OSS / ITSMConfigItemMultitenancy
         for my $Param (qw(DeplStateID InciStateID Description GroupID)) {
+# EO ITSMConfigItemMultitenancy
             $ConfigItem->{$Param} = $GetParam{$Param};
 
             if ( !$ConfigItem->{$Param} ) {
@@ -887,7 +902,7 @@ sub Run {
                         Name        => $Name . '_' . $i,
                         Data        => $DataValues,
                         SelectedID  => $GetParam{DynamicField}{"DynamicField_$Name"}[$i],
-                        Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
+                        Translation => $DynamicFieldConfig->{Config}->{TranslatableValues} || 0,
                         Max         => 100,
                     };
                 }
@@ -912,7 +927,7 @@ sub Run {
                 Name        => 'DynamicField_' . $Name,
                 Data        => $DataValues,
                 SelectedID  => $GetParam{DynamicField}{"DynamicField_$Name"},
-                Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
+                Translation => $DynamicFieldConfig->{Config}->{TranslatableValues} || 0,
                 Max         => 100,
             };
         }
@@ -943,7 +958,7 @@ sub Run {
                             Name        => 'DynamicField_' . $FrontendName . "_$i",
                             Data        => $DataValues,
                             SelectedID  => $SetField->{Values}{$FrontendName}[$i],
-                            Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
+                            Translation => $DynamicFieldConfig->{Config}->{TranslatableValues} || 0,
                             Max         => 100,
                         };
                     }
@@ -968,7 +983,7 @@ sub Run {
                     Name        => 'DynamicField_' . $FrontendName,
                     Data        => $DataValues,
                     SelectedID  => $SetField->{Values}{$FrontendName},
-                    Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
+                    Translation => $DynamicFieldConfig->{Config}->{TranslatableValues} || 0,
                     Max         => 100,
                 };
             }
@@ -1226,7 +1241,7 @@ sub Run {
             InciStateOptionStrg => $InciStateOptionStrg,
         },
     );
-
+# Rother OSS / ITSMConfigItemMultitenancy    
     # output group block
     my $GroupConfig;
     if ( $ClassPreferences{ConfigItemGroup} && $ClassPreferences{ConfigItemGroup}[0] ) {
@@ -1276,7 +1291,7 @@ sub Run {
             },
         );
     }
-
+# EO ITSMConfigItemMultitenancy
     # generate base url
     my $URL = "Action=PictureUpload;FormID=$Self->{FormID};ContentID=";
 
@@ -1594,7 +1609,7 @@ sub Run {
         # check for access rights
         for my $ClassID ( sort keys %{$ClassList} ) {
             my $HasAccess = $ConfigItemObject->Permission(
-                Type    => $Self->{Config}{Permission},
+                Type    => $Self->{Config}->{Permission},
                 Scope   => 'Class',
                 ClassID => $ClassID,
                 UserID  => $Self->{UserID},

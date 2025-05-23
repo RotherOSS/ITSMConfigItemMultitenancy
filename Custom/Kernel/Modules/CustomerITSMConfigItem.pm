@@ -283,6 +283,7 @@ sub Run {
                     }
                 }
             }
+
             my %PermissionConditionSearchParams;
             if ( $PermissionConditionConfig->{CustomerCompanyDynamicField} ) {
                 $PermissionConditionSearchParams{"DynamicField_$PermissionConditionConfig->{CustomerCompanyDynamicField}"} = {

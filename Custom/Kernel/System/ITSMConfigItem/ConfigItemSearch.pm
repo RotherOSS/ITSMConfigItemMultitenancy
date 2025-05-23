@@ -317,7 +317,7 @@ sub ConfigItemSearch {
         }
     }
 
-    # permissions are handled via classes and groups
+    # permissions are handled via classes
     if ( $Param{UserID} && $Param{UserID} != 1 ) {
 
         my @ClassIDs = $Param{ClassIDs} ? $Param{ClassIDs}->@* :
@@ -343,8 +343,8 @@ sub ConfigItemSearch {
         }
 
         return if !@AllowedClassIDs;
-        $Param{ClassIDs} = \@AllowedClassIDs;
 
+        $Param{ClassIDs} = \@AllowedClassIDs;
 # Rother OSS/ ITSMConfigItemMultitenancy
         my %AllowedGroupsHash = $Kernel::OM->Get('Kernel::System::Group')->GroupMemberList(
             UserID => $Param{UserID},
@@ -361,8 +361,8 @@ sub ConfigItemSearch {
             my @AllowedGroupIDs = keys %AllowedGroupsHash;
             $Param{GroupIDs} = \@AllowedGroupIDs;
         }
-    }
 # EO ITSMConfigItemMultitenancy
+    }
 
     # class ids
     if ( $Param{ClassIDs} ) {

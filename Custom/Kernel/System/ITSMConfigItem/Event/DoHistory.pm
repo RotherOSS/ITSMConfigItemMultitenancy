@@ -110,7 +110,9 @@ sub Run {
         NameUpdate            => \&_HistoryAdd,
         IncidentStateUpdate   => \&_HistoryAdd,
         DeploymentStateUpdate => \&_HistoryAdd,
+# Rother OSS / ITSMConfigItemMultitenancy        
         GroupUpdate           => \&_HistoryAdd,
+# EO ITSMConfigItemMultitenancy        
         DefinitionUpdate      => \&_HistoryAdd,
         VersionCreate         => \&_HistoryAdd,
         VersionUpdate         => \&_Return,
