@@ -52,7 +52,6 @@
                 <Item>ConfigItemCreate</Item>
                 <Item>ConfigItemUpdate</Item>
                 <Item>VersionCreate</Item>
-                <Item>VersionUpdate</Item>
                 <Item>DeploymentStateUpdate</Item>
                 <Item>IncidentStateUpdate</Item>
                 <Item>ConfigItemDelete</Item>
