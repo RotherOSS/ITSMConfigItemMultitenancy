@@ -637,7 +637,9 @@ sub ConfigItemSearch {
         delete $ClassList->{$ClassID} if !$HasAccess;
     }
 
-    # set up class filter corresponding to the access rights
+# From: 
+
+#    # set up class filter corresponding to the access rights
 #    push @Filters, {
 #        bool => {
 #            filter => [
@@ -650,6 +652,9 @@ sub ConfigItemSearch {
 #        },
 #    };
 #
+
+# To:
+
 # Rother OSS / ITSMConfigItemMultitenancy
     my $GroupObject = $Kernel::OM->Get('Kernel::System::Group');
     my %GroupList;

@@ -58,6 +58,8 @@ sub Run {
     my $ConfigItemObject          = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
     my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
     my $GeneralCatalogObject      = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
+# To:
+
 # Rother OSS / ITSMConfigItemMultitenancy
     my $GroupObject               = $Kernel::OM->Get('Kernel::System::Group');
 # EO ITSMConfigItemMultitenancy    
@@ -177,9 +179,13 @@ sub Run {
             my $ConfigItemName;
 
             if ($DuplicateID) {
+# From:
 
                 # get Data from duplicate CI
 #                for my $Param (qw(Name VersionString DeplStateID InciStateID Description)) {
+
+# To:
+
 # Rother OSS / ITSMConfigItemMultitenancy
                 for my $Param (qw(Name VersionString DeplStateID InciStateID Description GroupID)) {
 # EO ITSMConfigItemMultitenancy                    
@@ -251,9 +257,13 @@ sub Run {
         for my $FieldName ( $ActiveFields->@* ) {
             push @{$DynamicFieldList}, $Definition->{DynamicFieldRef}{$FieldName};
         }
+# From:
 
         # get general form data
 #        for my $Param (qw(Name VersionString DeplStateID InciStateID Description)) {
+
+# To:
+
 # Rother OSS / ITSMConfigItemMultitenancy            
         for my $Param (qw(Name VersionString DeplStateID InciStateID Description GroupID)) {
 # EO ITSMConfigItemMultitenancy            
@@ -282,7 +292,12 @@ sub Run {
             }
         }
     }
+# From:
+
 #    my @UpdatableFields = qw(DeplStateID InciStateID Description);
+
+# To:
+
 # Rother OSS / ITSMConfigItemMultitenancy
     my @UpdatableFields = qw(DeplStateID InciStateID Description GroupID);
 # EO ITSMConfigItemMultitenancy    
@@ -407,8 +422,13 @@ sub Run {
 
         my $AllRequired = 1;
 
+# From:
+
         # get general form data
 #        for my $Param (qw(DeplStateID InciStateID Description)) {
+
+# To:
+
 # Rother OSS / ITSMConfigItemMultitenancy
         for my $Param (qw(DeplStateID InciStateID Description GroupID)) {
 # EO ITSMConfigItemMultitenancy
@@ -1241,6 +1261,8 @@ sub Run {
             InciStateOptionStrg => $InciStateOptionStrg,
         },
     );
+# To:
+
 # Rother OSS / ITSMConfigItemMultitenancy    
     # output group block
     my $GroupConfig;
@@ -1249,9 +1271,9 @@ sub Run {
     }
     if ($GroupConfig) {
         my $GroupList;
-        my %AuthGroupsList = $GroupObject->PermissionUserGroupGet(
+        my %AuthGroupsList = $GroupObject->PermissionUserGet(
             UserID => $Self->{UserID},
-            Type   => "ro",
+            Type   => "rw",
         );
         my $ManagementGroup = $ConfigObject->Get("ITSMConfigItemManagementGroup");
         if ( $ManagementGroup && grep { $_ eq $ManagementGroup } values %AuthGroupsList ) {

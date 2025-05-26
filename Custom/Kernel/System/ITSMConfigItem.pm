@@ -365,6 +365,7 @@ sub ConfigItemGet {
     # The parameter VersionID takes precedence over ConfigItemID
     my @Row;
     if ( $Param{VersionID} ) {
+# From:
 
 #        @Row = $Kernel::OM->Get('Kernel::System::DB')->SelectRowArray(
 #            SQL => <<'END_SQL',
@@ -380,6 +381,8 @@ sub ConfigItemGet {
 #            Bind  => [ \$Param{VersionID} ],
 #            Limit => 1,
 #        );
+
+# To:
 
 # Rother OSS / ITSMConfigItemMultitenancy
         @Row = $Kernel::OM->Get('Kernel::System::DB')->SelectRowArray(
@@ -399,6 +402,8 @@ END_SQL
 # EO ITSMConfigItemMultitenancy
     }
 
+# From:
+
     # get latest ConfigItemVersion
     else {
 #        @Row = $Kernel::OM->Get('Kernel::System::DB')->SelectRowArray(
@@ -415,6 +420,8 @@ END_SQL
 #            Bind  => [ \$Param{ConfigItemID} ],
 #            Limit => 1,
 #        );
+
+# To:
 
 # Rother OSS / ITSMConfigItemMultitenancy
         @Row = $Kernel::OM->Get('Kernel::System::DB')->SelectRowArray(
@@ -453,6 +460,8 @@ END_SQL
     $ConfigItem{CreateBy}       = $Row[14];
     $ConfigItem{ChangeTime}     = $Row[15];
     $ConfigItem{ChangeBy}       = $Row[16];
+# To:
+
 # Rother OSS / ITSMConfigItemMultitenancy
     $ConfigItem{GroupID} = $Row[17];
 # EO ITSMConfigItemMultitenancy
@@ -720,6 +729,8 @@ sub ConfigItemAdd {
         return;
     }
 
+# From:
+
 #    # insert new config item
 #    $Kernel::OM->Get('Kernel::System::DB')->Do(
 #        SQL => 'INSERT INTO configitem ('
@@ -728,6 +739,8 @@ sub ConfigItemAdd {
 #            . ') VALUES (?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
 #        Bind => [ \$Param{Number}, \$Param{DeplStateID}, \$Param{InciStateID}, \$Param{ClassID}, \$Param{UserID}, \$Param{UserID} ],
 #    );
+
+# To:
 
 # Rother OSS / ITSMConfigItemMultitenancy
     my $GroupID = $Param{GroupID} ? $Param{GroupID} : undef;
@@ -1000,6 +1013,8 @@ sub ConfigItemUpdate {
             return;
         }
     }
+# To:
+
 # Rother OSS / ITSMConfigItemMultitenancy
     # get needed objects
     my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
@@ -1087,6 +1102,8 @@ sub ConfigItemUpdate {
     my $AddVersion    = 0;    # flag for deciding whether a new version is created
     my $UpdateVersion = 0;    # flag for deciding whether the current version needs an update
 
+# From:
+
 #    # check name, deployment and incident state, as well as Description
 #    ATTR:
 #    for my $Attribute (qw/Name DeplStateID InciStateID Description/) {
@@ -1099,6 +1116,9 @@ sub ConfigItemUpdate {
 #        };
 #
 #        $UpdateVersion = 1;
+
+# To:
+
 # Rother OSS / ITSMConfigItemMultitenancy    
     my $UpdateGroupID = 0;    # flag for deciding whether the current group id needs an update
 
@@ -1181,6 +1201,8 @@ sub ConfigItemUpdate {
             }
         }
     }
+# To:
+
 # Rother OSS / ITSMConfigItemMultitenancy
     if ($UpdateGroupID) {
 

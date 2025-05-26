@@ -385,6 +385,8 @@ sub Run {
             CurDeplSignal => $DeplSignals{ $ConfigItem->{CurDeplState} },
         },
     );
+# To:
+
 # Rother OSS / ITSMConfigItemMultitenancy
     # display config item permission group in the meta block if that feature is enabled for the class
     my %ClassPreferences = $GeneralCatalogObject->GeneralCatalogPreferencesGet(
