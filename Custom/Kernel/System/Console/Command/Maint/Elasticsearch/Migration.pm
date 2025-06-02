@@ -639,8 +639,6 @@ sub MigrateConfigItems {
                 CurDeplStateID => {
                     type => 'integer',
                 },
-# To:
-
 # Rother OSS / ITSMConfigItemMultitenancy                
                 GroupID => {
                     type => 'integer',

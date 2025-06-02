@@ -201,9 +201,6 @@ sub ConfigItemSearch {
     # get objects
     my $DBObject             = $Kernel::OM->Get('Kernel::System::DB');
     my $GeneralCatalogObject = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
-
-# To:
-
 # Rother OSS / ITSMConfigItemMultitenancy
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 # EO ITSMConfigItemMultitenancy
@@ -347,8 +344,6 @@ sub ConfigItemSearch {
         return if !@AllowedClassIDs;
 
         $Param{ClassIDs} = \@AllowedClassIDs;
-# To:
-
 # Rother OSS/ ITSMConfigItemMultitenancy
         my %AllowedGroupsHash = $Kernel::OM->Get('Kernel::System::Group')->GroupMemberList(
             UserID => $Param{UserID},
@@ -378,9 +373,6 @@ sub ConfigItemSearch {
         );
         $SQLExt .= ' AND ( ' . $SQLQueryInCondition . ' ) ';
     }
-
-# To:
-
 # Rother OSS/ ITSMConfigItemMultitenancy
     # group ids
     if ( $Param{GroupIDs} ) {

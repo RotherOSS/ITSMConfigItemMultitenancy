@@ -420,8 +420,6 @@ sub Run {
             my @SearchInciStates = map { $InciStateList->{$_} } $GetParam{InciStateIDs}->@*;
             $SearchConfig{InciStates} = \@SearchInciStates;
         }
-# To:
-
 # Rother OSS / ITSMConfigItemMultitenancy
         if ( $ConfigObject->Get('CustomerGroupSupport') ) {
             my $CustomerGroupObject  = $Kernel::OM->Get('Kernel::System::CustomerGroup');

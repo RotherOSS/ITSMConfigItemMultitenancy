@@ -58,8 +58,6 @@ sub Run {
     my $ConfigItemObject          = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
     my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
     my $GeneralCatalogObject      = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
-# To:
-
 # Rother OSS / ITSMConfigItemMultitenancy
     my $GroupObject               = $Kernel::OM->Get('Kernel::System::Group');
 # EO ITSMConfigItemMultitenancy    
@@ -179,14 +177,9 @@ sub Run {
             my $ConfigItemName;
 
             if ($DuplicateID) {
-# From:
-
                 # get Data from duplicate CI
-#                for my $Param (qw(Name VersionString DeplStateID InciStateID Description)) {
-
-# To:
-
 # Rother OSS / ITSMConfigItemMultitenancy
+#                for my $Param (qw(Name VersionString DeplStateID InciStateID Description)) {
                 for my $Param (qw(Name VersionString DeplStateID InciStateID Description GroupID)) {
 # EO ITSMConfigItemMultitenancy                    
                     $GetParam{$Param} = $ConfigItem->{$Param};
@@ -257,14 +250,9 @@ sub Run {
         for my $FieldName ( $ActiveFields->@* ) {
             push @{$DynamicFieldList}, $Definition->{DynamicFieldRef}{$FieldName};
         }
-# From:
-
         # get general form data
-#        for my $Param (qw(Name VersionString DeplStateID InciStateID Description)) {
-
-# To:
-
 # Rother OSS / ITSMConfigItemMultitenancy            
+#        for my $Param (qw(Name VersionString DeplStateID InciStateID Description)) {
         for my $Param (qw(Name VersionString DeplStateID InciStateID Description GroupID)) {
 # EO ITSMConfigItemMultitenancy            
             $GetParam{$Param} = $ParamObject->GetParam( Param => $Param );
@@ -292,13 +280,8 @@ sub Run {
             }
         }
     }
-# From:
-
-#    my @UpdatableFields = qw(DeplStateID InciStateID Description);
-
-# To:
-
 # Rother OSS / ITSMConfigItemMultitenancy
+#    my @UpdatableFields = qw(DeplStateID InciStateID Description);
     my @UpdatableFields = qw(DeplStateID InciStateID Description GroupID);
 # EO ITSMConfigItemMultitenancy    
     push @UpdatableFields, keys %ACLReducibleDynamicFields;
@@ -422,14 +405,9 @@ sub Run {
 
         my $AllRequired = 1;
 
-# From:
-
         # get general form data
-#        for my $Param (qw(DeplStateID InciStateID Description)) {
-
-# To:
-
 # Rother OSS / ITSMConfigItemMultitenancy
+#        for my $Param (qw(DeplStateID InciStateID Description)) {
         for my $Param (qw(DeplStateID InciStateID Description GroupID)) {
 # EO ITSMConfigItemMultitenancy
             $ConfigItem->{$Param} = $GetParam{$Param};
@@ -1261,8 +1239,6 @@ sub Run {
             InciStateOptionStrg => $InciStateOptionStrg,
         },
     );
-# To:
-
 # Rother OSS / ITSMConfigItemMultitenancy    
     # output group block
     my $GroupConfig;

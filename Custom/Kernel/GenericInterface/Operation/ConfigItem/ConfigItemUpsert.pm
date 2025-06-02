@@ -157,8 +157,6 @@ sub Run {
             );
         }
     }
-# To:
-
 # Rother OSS / ITSMConfigItemMultitenancy
     my $ConfigObject         = $Kernel::OM->Get('Kernel::Config');
     my $GroupObject          = $Kernel::OM->Get('Kernel::System::Group');
@@ -182,8 +180,6 @@ sub Run {
         }
 
         my @RequiredAttributes = qw(Class DeploymentState IncidentState);
-# To:
-
 # Rother OSS / ITSMConfigItemMultitenancy
         my $ClassPreferences = $GeneralCatalogObject->ItemGet(
             Class => 'ITSM::ConfigItem::Class',
@@ -308,8 +304,6 @@ sub Run {
             }
             $RequiredAttributes{ $CurrentCI . 'ID' } = $GeneralCatalogItem->{ItemID};
         }
-# To:
-
 # Rother OSS / ITSMConfigItemMultitenancy
         # get ID for the Group
         # users from the itsm management group can assign the CI to any group, others can assign only to one of their groups

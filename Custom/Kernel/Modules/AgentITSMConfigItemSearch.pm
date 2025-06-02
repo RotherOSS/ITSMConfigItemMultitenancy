@@ -1207,8 +1207,6 @@ sub Run {
                 SortBy   => [ $Self->{SortBy} ],
                 Limit    => $Self->{SearchLimit},
                 ClassIDs => [$ClassID],
-# To:
-
 # Rother OSS / ITSMConfigItemMultitenancy                
                 UserID   => $Self->{UserID},
 # EO ITSMConfigItemMultitenancy                                

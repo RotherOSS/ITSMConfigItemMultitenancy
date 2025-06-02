@@ -88,7 +88,6 @@
                         <div class="Clear"></div>
 [% RenderBlockEnd("RowInciState") %]
 
-# To:
 # Rother OSS / ITSMConfigItemMultitenancy
 [% RenderBlockStart("RowGroup") %]
                         <label class="[% Data.MandatoryClass | html %]" for="GroupID"><span class="Marker">[% Data.Marker | html %]</span> [% Translate("Group") | html %]: </label>

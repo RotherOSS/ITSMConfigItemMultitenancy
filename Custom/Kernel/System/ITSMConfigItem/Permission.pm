@@ -87,9 +87,6 @@ sub Permission {
 
         return;
     }
-
-# To:
-
 # Rother OSS / ITSMConfigItemMultitenancy
     if ( $Param{Scope} eq 'Item' ) {
         my $GroupAuth = $Self->_ItemGroupCheck(
@@ -197,9 +194,6 @@ sub CustomerPermission {
         ConfigItemID  => $Param{ConfigItemID},
         DynamicFields => any { $_->{CustomerUserDynamicField} || $_->{CustomerCompanyDynamicField} } values %Conditions,
     );
-
-# To:
-
 # Rother OSS / ITSMConfigItemMultitenancy
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
     if ( $ConfigObject->Get('CustomerGroupSupport') ) {
@@ -298,9 +292,6 @@ sub CustomerPermission {
     # don't grant access
     return;
 }
-
-# To:
-
 # Rother OSS / ITSMConfigItemMultitenancy
 sub _ItemGroupCheck {
     my ( $Self, %Param ) = @_;
