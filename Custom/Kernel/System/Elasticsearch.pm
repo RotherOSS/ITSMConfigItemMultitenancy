@@ -671,25 +671,36 @@ sub ConfigItemSearch {
     # classes with no group restrictions should not be affected by the group filtering
     # for these classes the search includes items whose GroupID is null
     push @Filters, {
-        bool => {
+        bool=> {
             filter => [
                 {
                     terms => {
                         ClassID => [ keys %{$ClassList} ],
-                        GroupID => [ keys %{%GroupList} ],
-                    },
+                    }
                 },
                 {
                     bool => {
-                        must_not => {
-                            exists => {
-                                field => 'GroupID'
+                        should => [
+                            {
+                                terms => {
+                                    GroupID => [ keys %{%GroupList} ]
+                                }
+                            },
+                            {
+                                bool => {
+                                    must_not => {
+                                        exists => {
+                                            field => 'GroupID',
+                                        }
+                                    }
+                                }
                             }
-                        }
+                        ],
+                        minimum_should_match => 1,
                     }
                 }
-            ],
-        },
+            ]
+        }
     };
 # EO ITSMConfigItemMultitenancy
 
