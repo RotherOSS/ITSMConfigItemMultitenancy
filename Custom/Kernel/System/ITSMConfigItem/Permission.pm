@@ -303,9 +303,6 @@ sub _ItemGroupCheck {
         ConfigItemID => $Param{ItemID},
     );
 
-    # if there is no GroupID attribute at all, exit because something is wrong
-    return unless exists $ConfigItem->{GroupID};
-
     # the item permission group is optional, so grant access if it exists but is not set
     my $ItemPermission = $ConfigItem->{GroupID};
     return 1 unless $ItemPermission;
