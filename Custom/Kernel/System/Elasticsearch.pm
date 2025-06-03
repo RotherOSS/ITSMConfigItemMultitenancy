@@ -654,7 +654,7 @@ sub ConfigItemSearch {
     my $GroupObject = $Kernel::OM->Get('Kernel::System::Group');
     my %GroupList;
     my %AuthGroupsList = $GroupObject->PermissionUserGroupGet(
-        UserID => $Self->{UserID},
+        UserID => $Param{UserID},
         Type   => "ro",
     );
     my $ManagementGroup = $ConfigObject->Get("ITSMConfigItemManagementGroup");
@@ -683,7 +683,7 @@ sub ConfigItemSearch {
                         should => [
                             {
                                 terms => {
-                                    GroupID => [ keys %{%GroupList} ]
+                                    GroupID => [ keys %GroupList ]
                                 }
                             },
                             {
