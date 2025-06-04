@@ -9,7 +9,7 @@ Overview
 ========
 Summary
 -------
-This package makes it possible to associate an individual config item to a group, so that only agents or customers of that group are authorized to view, search or perform operations on that config item, be it via Frontend or via web services. Any config item not associated to a group does not hold those restrictions.
+This package makes it possible to associate an individual config item to a group, so that only agents or customers of that group are authorized to view, search or perform operations on that config item, be it via Frontend or via web services. Any config item not associated to a group does not hold these restrictions.
 
 Configuration
 =============
@@ -34,12 +34,11 @@ Open the Package Manager module from the Administration group in the Agent Inter
 
 If Elasticsearch is active, execute the console command *Maint::Elasticsearch::Migration --target i*
 
-Go to *Admin->General Catalog Management->ITSM::ConfigItem::Class*, and for every config item class intended to use this feature, set the *Config Item Group* 
-class setting (which is *Disabled* by default) as *Enabled* or *Enabled and required*, depending on the field being allowed empty or not, respectively.
+Go to *Admin->General Catalog Management->ITSM::ConfigItem::Class*, and for every config item class intended to use this feature, set the "Config Item Group" class setting (which is "Disabled" by default) as "Enabled" or "Enabled and required", depending on the field being allowed empty or not, respectively.
 
-**Note:** Reverting the *Config Item Group* class setting back to *Disabled* does not reset the groups previously assigned to the config items of that class. The group attribute still keeps its value on the config items, although it is not visible or available anymore.
+**Note:** Reverting the "Config Item Group" class setting back to "Disabled" does not reset the groups previously assigned to the config items of that class. The group attribute still keeps its value on the config items, although it is not visible or available anymore.
 
-To enable the feature in the Customer module, the system configuration setting *CustomerGroupSupport* must be enabled.
+To activate the feature in the Customer module, the system configuration setting *CustomerGroupSupport* must be enabled.
 
 Custom Configuration and Advanced Features
 ------------------------------------------
