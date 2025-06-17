@@ -33,10 +33,10 @@
     ]]></IntroInstall>
     <DatabaseInstall Type="post">
         <TableAlter Name="configitem">
-            <ColumnAdd Name="group_id" Type="INT" />
-            <ForeignKey ForeignTable="groups_table">
+            <ColumnAdd Name="group_id" Type="INTEGER" />
+            <ForeignKeyCreate ForeignTable="groups_table">
                 <Reference Local="group_id" Foreign="id" />
-            </ForeignKey>
+            </ForeignKeyCreate>
         </TableAlter>
     </DatabaseInstall>
     <DatabaseUninstall Type="pre">
