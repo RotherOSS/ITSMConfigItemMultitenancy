@@ -58,11 +58,12 @@ sub Run {
     my $ConfigItemObject          = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
     my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
     my $GeneralCatalogObject      = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
+
 # Rother OSS / ITSMConfigItemMultitenancy
-    my $GroupObject               = $Kernel::OM->Get('Kernel::System::Group');
-# EO ITSMConfigItemMultitenancy    
-    my $ConfigObject              = $Kernel::OM->Get('Kernel::Config');
-    my $LayoutObject              = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $GroupObject = $Kernel::OM->Get('Kernel::System::Group');
+# EO ITSMConfigItemMultitenancy
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
 
     # get config of frontend module
     $Self->{Config} = $ConfigObject->Get("ITSMConfigItem::Frontend::$Self->{Action}");
@@ -177,11 +178,12 @@ sub Run {
             my $ConfigItemName;
 
             if ($DuplicateID) {
+
                 # get Data from duplicate CI
 # Rother OSS / ITSMConfigItemMultitenancy
 #                for my $Param (qw(Name VersionString DeplStateID InciStateID Description)) {
                 for my $Param (qw(Name VersionString DeplStateID InciStateID Description GroupID)) {
-# EO ITSMConfigItemMultitenancy                    
+# EO ITSMConfigItemMultitenancy
                     $GetParam{$Param} = $ConfigItem->{$Param};
                 }
 
@@ -215,9 +217,10 @@ sub Run {
 
         else {
             # get general form data
-#            for my $Param (qw(Name VersionString DeplStateID InciStateID Description)) {
+            #            for my $Param (qw(Name VersionString DeplStateID InciStateID Description)) {
+# Rother OSS / ITSMConfigItemMultitenancy
             for my $Param (qw(Name VersionString DeplStateID InciStateID Description GroupID)) {
-# EO ITSMConfigItemMultitenancy                
+# EO ITSMConfigItemMultitenancy
                 $GetParam{$Param} = $ConfigItem->{$Param};
             }
 
@@ -250,11 +253,12 @@ sub Run {
         for my $FieldName ( $ActiveFields->@* ) {
             push @{$DynamicFieldList}, $Definition->{DynamicFieldRef}{$FieldName};
         }
+
         # get general form data
-# Rother OSS / ITSMConfigItemMultitenancy            
+# Rother OSS / ITSMConfigItemMultitenancy
 #        for my $Param (qw(Name VersionString DeplStateID InciStateID Description)) {
         for my $Param (qw(Name VersionString DeplStateID InciStateID Description GroupID)) {
-# EO ITSMConfigItemMultitenancy            
+# EO ITSMConfigItemMultitenancy
             $GetParam{$Param} = $ParamObject->GetParam( Param => $Param );
         }
 
@@ -280,10 +284,11 @@ sub Run {
             }
         }
     }
+
 # Rother OSS / ITSMConfigItemMultitenancy
 #    my @UpdatableFields = qw(DeplStateID InciStateID Description);
     my @UpdatableFields = qw(DeplStateID InciStateID Description GroupID);
-# EO ITSMConfigItemMultitenancy    
+# EO ITSMConfigItemMultitenancy
     push @UpdatableFields, keys %ACLReducibleDynamicFields;
 
     # convert dynamic field values into a structure for ACLs
@@ -1239,7 +1244,8 @@ sub Run {
             InciStateOptionStrg => $InciStateOptionStrg,
         },
     );
-# Rother OSS / ITSMConfigItemMultitenancy    
+
+# Rother OSS / ITSMConfigItemMultitenancy
     # output group block
     my $GroupConfig;
     if ( $ClassPreferences{ConfigItemGroup} && $ClassPreferences{ConfigItemGroup}[0] ) {
@@ -1262,10 +1268,33 @@ sub Run {
             $GroupList = \%AuthGroupsList;
         }
 
+        my $ValidGroupsList = $ConfigObject->Get('ConfigItemMultitenancy::ValidGroups');
+        if ($ValidGroupsList) {
+            for my $GroupID ( keys $GroupList->%* ) {
+                if ( !any { $_ eq $GroupList->{$GroupID} } $ValidGroupsList->@* ) {
+                    delete $GroupList->{$GroupID};
+                }
+            }
+        }
+
+        my $InvalidGroupsList = $ConfigObject->Get('ConfigItemMultitenancy::InvalidGroups');
+        if ($InvalidGroupsList) {
+            for my $GroupID ( keys $GroupList->%* ) {
+                if ( any { $_ eq $GroupList->{$GroupID} } $InvalidGroupsList->@* ) {
+                    delete $GroupList->{$GroupID};
+                }
+            }
+        }
+
         # output group invalid block
         my $RowGroupInvalid = '';
-        if ( $GroupConfig == 2 && !$ConfigItem->{GroupID} && $Self->{Subaction} eq 'Save' ) {
-            $RowGroupInvalid = ' ServerError';
+        if ( $Self->{Subaction} eq 'Save' ) {
+            if ( $GroupConfig == 2 && !$ConfigItem->{GroupID} ) {
+                $RowGroupInvalid = ' ServerError';
+            }
+            elsif ( $ConfigItem->{GroupID} && !any { $_ eq $ConfigItem->{GroupID} } keys $GroupList->%* ) {
+                $RowGroupInvalid = ' ServerError';
+            }
         }
 
         my $ValidateRequired = $GroupConfig == 2 ? 'Validate_Required' : '';
@@ -1274,7 +1303,7 @@ sub Run {
         my $GroupOptionStrg = $LayoutObject->BuildSelection(
             Data         => $GroupList,
             Name         => 'GroupID',
-            PossibleNone => 2 - $GroupConfig,
+            PossibleNone => 1,
             Class        => "FormUpdate $ValidateRequired Modernize $RowGroupInvalid",
             SelectedID   => $GetParam{GroupID},
         );

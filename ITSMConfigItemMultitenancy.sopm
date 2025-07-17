@@ -28,7 +28,7 @@
     <IntroInstall Type="post" Title="Convert legacy reference fields" Lang="en"><![CDATA[
 
         <br/>
-        If you are using Elasticsearch, please execute the console command "Maint::Elasticsearch::Migration --target i"<br/>
+        If you are using Elasticsearch, please execute the console command "bin/otobo.Console.pl Maint::Elasticsearch::Migration --target i"<br/>
 
     ]]></IntroInstall>
     <DatabaseInstall Type="post">
