@@ -58,12 +58,11 @@ sub Run {
     my $ConfigItemObject          = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
     my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
     my $GeneralCatalogObject      = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
-
+    my $ConfigObject              = $Kernel::OM->Get('Kernel::Config');
+    my $LayoutObject              = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
 # Rother OSS / ITSMConfigItemMultitenancy
-    my $GroupObject = $Kernel::OM->Get('Kernel::System::Group');
+    my $GroupObject               = $Kernel::OM->Get('Kernel::System::Group');
 # EO ITSMConfigItemMultitenancy
-    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
 
     # get config of frontend module
     $Self->{Config} = $ConfigObject->Get("ITSMConfigItem::Frontend::$Self->{Action}");
@@ -217,8 +216,8 @@ sub Run {
 
         else {
             # get general form data
-            #            for my $Param (qw(Name VersionString DeplStateID InciStateID Description)) {
 # Rother OSS / ITSMConfigItemMultitenancy
+#            for my $Param (qw(Name VersionString DeplStateID InciStateID Description)) {
             for my $Param (qw(Name VersionString DeplStateID InciStateID Description GroupID)) {
 # EO ITSMConfigItemMultitenancy
                 $GetParam{$Param} = $ConfigItem->{$Param};
@@ -1319,6 +1318,7 @@ sub Run {
         );
     }
 # EO ITSMConfigItemMultitenancy
+
     # generate base url
     my $URL = "Action=PictureUpload;FormID=$Self->{FormID};ContentID=";
 

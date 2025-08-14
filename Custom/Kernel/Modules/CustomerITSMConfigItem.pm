@@ -402,6 +402,9 @@ sub Run {
     if (%GetColumnFilter) {
         $LayoutObject->Block(
             Name => 'FilterDelete',
+            Data => {
+                Filter => $Filter,
+            },
         );
     }
 

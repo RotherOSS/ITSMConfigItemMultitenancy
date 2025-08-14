@@ -292,6 +292,7 @@ sub CustomerPermission {
     # don't grant access
     return;
 }
+
 # Rother OSS / ITSMConfigItemMultitenancy
 sub _ItemGroupCheck {
     my ( $Self, %Param ) = @_;

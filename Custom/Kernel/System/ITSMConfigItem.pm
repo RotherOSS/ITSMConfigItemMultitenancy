@@ -2025,7 +2025,6 @@ sub CurInciStateRecalc {
             Bind => [ \$CurInciStateID, \$ConfigItemID ],
         );
 
-        # TODO: Instead of deleting, if present, update cache with new cur_inci
         # TODO: Also the VersionID-caches have to be considered, they also contain CurInciState
         # delete the cache
         for my $DFData ( 0, 1 ) {
@@ -2038,24 +2037,6 @@ sub CurInciStateRecalc {
                 ),
             );
         }
-
-        # TODO: not necessary, is it?
-        $CacheObject->Delete(
-            Type => $Self->{CacheType},
-            Key  => 'VersionNameGet::ConfigItemID::' . $ConfigItemID,
-        );
-
-        # TODO: Check what is necessary here
-        # delete affected caches for last version
-        my $VersionList = $Self->VersionList(
-            ConfigItemID => $ConfigItemID,
-        );
-        my $VersionID = $VersionList->[-1];
-
-        $CacheObject->Delete(
-            Type => $Self->{CacheType},
-            Key  => 'VersionNameGet::VersionID::' . $VersionID,
-        );
     }
 
     # set the current incident state type for each service (influenced by linked CIs)
@@ -2208,7 +2189,7 @@ sub _FindInciConfigItems {
     # ignore already scanned ids (infinite loop protection)
     return if defined $Param{ScannedConfigItemIDs}{ $Param{ConfigItemID} };
 
-    # set a default so the ConfigITem won't be scanned again
+    # set a default so the ConfigItem won't be scanned again
     $Param{ScannedConfigItemIDs}{ $Param{ConfigItemID} } = {};
     $Param{ScannedConfigItemIDs}{ $Param{ConfigItemID} }->{Type} = 'operational';
 
