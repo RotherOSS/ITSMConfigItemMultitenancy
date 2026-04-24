@@ -2,7 +2,9 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# --
+# $origin: otobo -  - Kernel/System/ITSMConfigItem/Event/DoHistory.pm
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -110,9 +112,9 @@ sub Run {
         NameUpdate            => \&_HistoryAdd,
         IncidentStateUpdate   => \&_HistoryAdd,
         DeploymentStateUpdate => \&_HistoryAdd,
-# Rother OSS / ITSMConfigItemMultitenancy        
+# Rother OSS / ITSMConfigItemMultitenancy
         GroupUpdate           => \&_HistoryAdd,
-# EO ITSMConfigItemMultitenancy        
+# EO ITSMConfigItemMultitenancy
         DefinitionUpdate      => \&_HistoryAdd,
         VersionCreate         => \&_HistoryAdd,
         VersionUpdate         => \&_Return,
@@ -126,7 +128,7 @@ sub Run {
     if ( !exists $Dispatcher{ $Param{Event} } ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => 'non existant history type: ' . $Param{Event},
+            Message  => 'non existent history type: ' . $Param{Event},
         );
 
         return;

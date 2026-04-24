@@ -2,7 +2,9 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# --
+# $origin: otobo -  - Kernel/System/ITSMConfigItem.pm
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -396,6 +398,7 @@ END_SQL
         );
 # EO ITSMConfigItemMultitenancy
     }
+
     # get latest ConfigItemVersion
     else {
 # Rother OSS / ITSMConfigItemMultitenancy
@@ -824,7 +827,8 @@ sub ConfigItemDelete {
 
     # remember config item data before delete
     my $ConfigItemData = $Self->ConfigItemGet(
-        ConfigItemID => $Param{ConfigItemID},
+        ConfigItemID  => $Param{ConfigItemID},
+        DynamicFields => 1,
     );
 
     # delete all links to this config item before deleting the versions.
@@ -933,6 +937,7 @@ sub ConfigItemDelete {
             Comment      => $Param{ConfigItemID},
             Number       => $ConfigItemData->{Number},
             Class        => $ConfigItemData->{Class},
+            ConfigItem   => $ConfigItemData,
         },
         UserID => $Param{UserID},
     );
@@ -1008,7 +1013,7 @@ sub ConfigItemUpdate {
     # get current config item, including info from the last version
     my $ConfigItem = $Self->ConfigItemGet(
         ConfigItemID  => $Param{ConfigItemID},
-        DynamicFields => ( @DynamicFieldNames ? 1 : 0 ),
+        DynamicFields => 1,
     );
 
     my $ClassList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
@@ -1082,7 +1087,7 @@ sub ConfigItemUpdate {
     my $AddVersion    = 0;    # flag for deciding whether a new version is created
     my $UpdateVersion = 0;    # flag for deciding whether the current version needs an update
 
-# Rother OSS / ITSMConfigItemMultitenancy    
+# Rother OSS / ITSMConfigItemMultitenancy
 #    # check name, deployment and incident state, as well as Description
 #    ATTR:
 #    for my $Attribute (qw/Name DeplStateID InciStateID Description/) {
@@ -1137,7 +1142,7 @@ sub ConfigItemUpdate {
         ClassID => $ConfigItem->{ClassID},
     );
 
-    my %SkipForUdateDFs;
+    my %SkipForUpdateDFs;
 
     # check for changed dynamic fields to trigger versions and filter history entries
     if (@DynamicFieldNames) {
@@ -1164,7 +1169,7 @@ sub ConfigItemUpdate {
             {
                 # do not pass unchanged dynamic fields to VersionUpdate()
                 # store them for VersionAdd() because of potential difference from ExternalSource
-                $SkipForUdateDFs{"DynamicField_$Name"} = delete $Param{"DynamicField_$Name"};
+                $SkipForUpdateDFs{"DynamicField_$Name"} = delete $Param{"DynamicField_$Name"};
 
                 next NAME;
             }
@@ -1183,7 +1188,7 @@ sub ConfigItemUpdate {
         my $Success = $Kernel::OM->Get('Kernel::System::DB')->Do(
             SQL  => 'UPDATE configitem SET group_id = ? WHERE id = ?',
             Bind => [ \$Changed{GroupID}{New}, \$Param{ConfigItemID} ],
-        );        
+        );
 
         # Clear the cache for ConfigItemGet
         my $VersionList = $Self->VersionList(
@@ -1216,7 +1221,7 @@ sub ConfigItemUpdate {
         my $Success = $Self->VersionAdd(
             Description => $ConfigItem->{Description} // '',
             %Param,
-            %SkipForUdateDFs,
+            %SkipForUpdateDFs,
             LastVersion => $ConfigItem,
         );
         return unless $Success;
@@ -1244,6 +1249,8 @@ sub ConfigItemUpdate {
             Data  => {
                 ConfigItemID => $ConfigItem->{ConfigItemID},
                 Comment      => $Changed{$Key}{New} . '%%' . $Changed{$Key}{Old},
+                Old          => $Changed{$Key}{Old},
+                New          => $Changed{$Key}{New},
             },
             UserID => $Param{UserID},
         );
@@ -1255,7 +1262,7 @@ sub ConfigItemUpdate {
             Event => 'ConfigItemUpdate',
             Data  => {
                 ConfigItemID => $ConfigItem->{ConfigItemID},
-                Comment      => $ConfigItem->{ConfigItemID} . '%%' . $Param{Number},
+                Comment      => $ConfigItem->{ConfigItemID} . '%%' . $ConfigItem->{Number},
                 OldDeplState => $Changed{DeplStateID}{Old},
             },
             UserID => $Param{UserID},

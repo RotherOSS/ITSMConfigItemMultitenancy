@@ -2,7 +2,9 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# --
+# $origin: otobo - 12b305a02ecd3d65af5c651b44b3e52c228260d6 - Kernel/System/Elasticsearch.pm
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -453,7 +455,7 @@ sub TicketSearch {
         }
     );
 
-    # convert the Elasticsearch return to the needed OTRS structure and return
+    # convert the Elasticsearch return to the needed OTOBO structure and return
     if ( $ResultType eq 'HASH' ) {
         return (
             map {
@@ -930,17 +932,6 @@ sub ConfigItemCreate {
     );
     return if !$Result->{Success};
 
-    # update the version
-    $Result = $RequesterObject->Run(
-        WebserviceID => $Self->{WebserviceID},
-        Invoker      => 'ConfigItemManagement',
-        Asynchronous => 0,
-        Data         => {
-            Event        => 'VersionCreate',
-            ConfigItemID => $Param{ConfigItemID},
-        }
-    );
-
     # update the attachments
     if (
         $ConfigObject->Get('Elasticsearch::ConfigItemSearchFields')
@@ -1330,6 +1321,19 @@ sub InitialSetup {
         $Success = $Self->CreateIndex(
             IndexName => { index => 'ticket' },
             Request   => \%RequestTicket,
+        );
+        $Errors++ unless $Success;
+
+        # create index for tmpattachments
+        my %RequestTmpAttachments = (
+            settings => $Self->IndexSettingsGet(
+                Config   => $IndexConfig->{TmpAttachments}   // $DefaultConfig,
+                Template => $IndexTemplate->{TmpAttachments} // $DefaultTemplate,
+            ),
+        );
+        $Success = $Self->CreateIndex(
+            IndexName => { index => 'tmpattachments' },
+            Request   => \%RequestTmpAttachments,
         );
         $Errors++ unless $Success;
 

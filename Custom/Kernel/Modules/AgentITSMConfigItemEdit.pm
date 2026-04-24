@@ -2,7 +2,9 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# --
+# $origin: otobo -  - Kernel/Modules/AgentITSMConfigItemEdit.pm
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -206,12 +208,13 @@ sub Run {
                 }
             }
 
-            # TODO Prio3: set default data
-            #else {
-            #for my $Param (qw(Name VersionString DeplStateID InciStateID Description)) {
-            #    $GetParam{$Param} = ;
-            #}
-            #}
+            else {
+                %GetParam = (
+                    %GetParam,
+                    $ConfigItem->%*,
+                );
+                delete $GetParam{ConfigItemID};
+            }
         }
 
         else {
@@ -261,9 +264,13 @@ sub Run {
             $GetParam{$Param} = $ParamObject->GetParam( Param => $Param );
         }
 
+        # special case for class
+        $GetParam{ClassID} = $ConfigItem->{ClassID};
+
         DYNAMICFIELD:
         for my $DynamicFieldConfig ( $DynamicFieldList->@* ) {
             next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
+            next DYNAMICFIELD if $DynamicFieldConfig->{Readonly};
 
             # extract the dynamic field value from the web request
             $DynamicFieldValues{ $DynamicFieldConfig->{Name} } = $DynamicFieldBackendObject->EditFieldValueGet(
@@ -304,9 +311,10 @@ sub Run {
     # get upload cache object
     my $UploadCacheObject = $Kernel::OM->Get('Kernel::System::Web::UploadCache');
 
-    # when there's no ClassID it means, an existing config item is edited as the ClassID is only
-    # provided as GET param when creating a new config item
-    if ( !$ParamObject->GetParam( Param => 'ClassID' ) ) {
+    # attachments of existing config item needs to be loaded in two cases:
+    #   1. an existing config item is edited - no class id present in GetParam
+    #   2. an existing config item is duplicated
+    if ( !$ParamObject->GetParam( Param => 'ClassID' ) || $DuplicateID ) {
 
         # get all attachments meta data
         my @ExistingAttachments = $ConfigItemObject->ConfigItemAttachmentList(
@@ -741,6 +749,7 @@ sub Run {
             DYNAMICFIELD:
             for my $DynamicField ( $DynamicFieldList->@* ) {
                 next DYNAMICFIELD if !IsHashRefWithData($DynamicField);
+                next DYNAMICFIELD if $DynamicField->{Readonly};
 
                 $ConfigItem->{ 'DynamicField_' . $DynamicField->{Name} } = $DynamicFieldValues{ $DynamicField->{Name} };
             }
@@ -888,7 +897,7 @@ sub Run {
             if ( $DynamicFieldConfig->{Config}{MultiValue} && ref $GetParam{DynamicField}{"DynamicField_$Name"} eq 'ARRAY' ) {
                 for my $i ( 0 .. $#{ $GetParam{DynamicField}{"DynamicField_$Name"} } ) {
                     my $DataValues = $DynFieldStates{Fields}{$Name}{NotACLReducible}
-                        ? $GetParam{DynamicField}{"DynamicField_$Name"}[$i]
+                        ? ( $GetParam{DynamicField}{"DynamicField_$Name"}[$i] // '' )
                         :
                         (
                             $DynamicFieldBackendObject->BuildSelectionDataGet(
@@ -909,11 +918,32 @@ sub Run {
                     };
                 }
 
+                # add template value for keeping templates in line with ACLs
+                if ( !$DynFieldStates{Fields}{$Name}{NotACLReducible} ) {
+                    my $DataValues = (
+                        $DynamicFieldBackendObject->BuildSelectionDataGet(
+                            DynamicFieldConfig => $DynamicFieldConfig,
+                            PossibleValues     => $DynFieldStates{Fields}{$Name}{PossibleValues},
+                            Value              => [ $DynamicFieldConfig->{Config}{DefaultValue} // '' ],
+                            )
+                            || $DynFieldStates{Fields}{$Name}{PossibleValues}
+                    );
+
+                    # add dynamic field to the list of fields to update
+                    push @DynamicFieldAJAX, {
+                        Name        => 'DynamicField_' . $DynamicFieldConfig->{Name} . '_Template',
+                        Data        => $DataValues,
+                        SelectedID  => $DynamicFieldConfig->{Config}{DefaultValue} // '',
+                        Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
+                        Max         => 100,
+                    };
+                }
+
                 next DYNAMICFIELD;
             }
 
             my $DataValues = $DynFieldStates{Fields}{$Name}{NotACLReducible}
-                ? $GetParam{DynamicField}{"DynamicField_$Name"}
+                ? ( $GetParam{DynamicField}{"DynamicField_$Name"} // '' )
                 :
                 (
                     $DynamicFieldBackendObject->BuildSelectionDataGet(
@@ -944,7 +974,7 @@ sub Run {
                 if ( $DynamicFieldConfig->{Config}{MultiValue} && ref $SetField->{Values}{$FrontendName} eq 'ARRAY' ) {
                     for my $i ( 0 .. $#{ $SetField->{Values}{$FrontendName} } ) {
                         my $DataValues = $SetField->{FieldStates}{$FrontendName}{NotACLReducible}
-                            ? $SetField->{Values}{$FrontendName}[$i]
+                            ? ( $SetField->{Values}{$FrontendName}[$i] // '' )
                             :
                             (
                                 $DynamicFieldBackendObject->BuildSelectionDataGet(
@@ -965,11 +995,32 @@ sub Run {
                         };
                     }
 
+                    # add template value for keeping templates in line with ACLs
+                    if ( !$SetField->{FieldStates}{$FrontendName}{NotACLReducible} ) {
+                        my $DataValues = (
+                            $DynamicFieldBackendObject->BuildSelectionDataGet(
+                                DynamicFieldConfig => $DynamicFieldConfig,
+                                PossibleValues     => $SetField->{FieldStates}{$FrontendName}{PossibleValues},
+                                Value              => [ $DynamicFieldConfig->{Config}{DefaultValue} // '' ],
+                                )
+                                || $SetField->{FieldStates}{$FrontendName}{PossibleValues}
+                        );
+
+                        # add dynamic field to the list of fields to update
+                        push @DynamicFieldAJAX, {
+                            Name        => 'DynamicField_' . $DynamicFieldConfig->{Name} . '_Template',
+                            Data        => $DataValues,
+                            SelectedID  => $DynamicFieldConfig->{Config}{DefaultValue} // '',
+                            Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
+                            Max         => 100,
+                        };
+                    }
+
                     next DYNAMICFIELD;
                 }
 
                 my $DataValues = $SetField->{FieldStates}{$FrontendName}{NotACLReducible}
-                    ? $SetField->{Values}{$FrontendName}
+                    ? ( $SetField->{Values}{$FrontendName} // '' )
                     :
                     (
                         $DynamicFieldBackendObject->BuildSelectionDataGet(
@@ -1028,7 +1079,6 @@ sub Run {
             Autoselect                => $Autoselect,
             ACLPreselection           => $ACLPreselection,
             LoopProtection            => \$LoopProtection,
-            InitialRun                => 1,
         );
 
         # store new values
@@ -1387,7 +1437,7 @@ sub Run {
         NoJavaScript => 1,
     );
 
-    # take the safe content if neccessary
+    # take the safe content if necessary
     if ( $SafeContent{Replace} ) {
         $FieldContent = $SafeContent{String};
     }
@@ -1467,7 +1517,7 @@ sub Run {
                     }
                 }
 
-                # weed out multiple occurances of dynamic fields - see comment above
+                # weed out multiple occurrences of dynamic fields - see comment above
                 $Section->{Content} = $Self->_DiscardFieldsSeen(
                     Content => $Section->{Content},
                     Seen    => $FieldsSeen,

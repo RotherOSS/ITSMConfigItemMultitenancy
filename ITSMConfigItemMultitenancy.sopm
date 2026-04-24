@@ -5,10 +5,10 @@
     <Framework>11.0.x</Framework>
     <PackageRequired Version="11.0.1">ITSMConfigurationManagement</PackageRequired>
     <Vendor>Rother OSS GmbH</Vendor>
-    <URL>https://otobo.de/</URL>
+    <URL>https://otobo.io/</URL>
     <License>GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007</License>
     <Description Lang="en">The OTOBO ITSM CMDB Package enhanced with group permissions at config item level.</Description>
-    <Filelist>    
+    <Filelist>
         <File Permission="660" Location="Custom/Kernel/GenericInterface/Operation/ConfigItem/ConfigItemUpsert.pm" />
         <File Permission="660" Location="Custom/Kernel/Modules/AgentITSMConfigItemEdit.pm" />
         <File Permission="660" Location="Custom/Kernel/Modules/AgentITSMConfigItemSearch.pm" />
@@ -18,14 +18,13 @@
         <File Permission="660" Location="Custom/Kernel/Output/HTML/Templates/Standard/AgentITSMConfigItemEdit.tt" />
         <File Permission="660" Location="Custom/Kernel/Output/HTML/Templates/Standard/AgentITSMConfigItemZoom.tt" />
         <File Permission="660" Location="Custom/Kernel/System/Console/Command/Maint/Elasticsearch/Migration.pm" />
-        <File Permission="660" Location="Custom/Kernel/System/Elasticsearch.pm" />        
+        <File Permission="660" Location="Custom/Kernel/System/Elasticsearch.pm" />
         <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem.pm" />
         <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem/ConfigItemSearch.pm" />
         <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem/Event/DoHistory.pm" />
         <File Permission="660" Location="Custom/Kernel/System/ITSMConfigItem/Permission.pm" />
         <File Permission="660" Location="Kernel/Config/Files/XML/ITSMConfigItemMultitenancy.xml" />
         <File Permission="660" Location="scripts/test/ConfigItemMultiTenancy.t" />
-        scripts/test/ConfigItemMultiTenancyAddSearch.t
     </Filelist>
     <IntroInstall Type="post" Title="Convert legacy reference fields" Lang="en"><![CDATA[
 
