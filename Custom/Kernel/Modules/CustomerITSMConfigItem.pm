@@ -228,8 +228,7 @@ sub Run {
 
     if ( IsHashRefWithData($PermissionConditionsConfig) ) {
         PERMCONF:
-        for my $ConfigCounter ( 1 .. 5 ) {
-            my $ConfigIdentifier          = sprintf( "%02d", $ConfigCounter );
+        for my $ConfigIdentifier ( sort keys $PermissionConditionsConfig->%* ) {
             my $PermissionConditionConfig = $PermissionConditionsConfig->{$ConfigIdentifier};
             next PERMCONF unless IsHashRefWithData($PermissionConditionConfig);
 

@@ -211,6 +211,7 @@ sub ConfigItemSearch {
 # Rother OSS / ITSMConfigItemMultitenancy
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 # EO ITSMConfigItemMultitenancy
+
     # quote id array elements
     ARGUMENT:
     for my $Key (
