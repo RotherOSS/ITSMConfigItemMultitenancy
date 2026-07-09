@@ -4,7 +4,7 @@
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
 # Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
-# $origin: otobo - 11ab33e9c61bf8e4fb9bcbdf1d70ec962a757f58 - Kernel/System/Elasticsearch.pm
+# $origin: otobo - dfe5c0f02b2496b265f85ed662261591507c6b79 - Kernel/System/Elasticsearch.pm
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -438,6 +438,13 @@ sub TicketSearch {
         # get fields to search
         my $FulltextFields = $ConfigObject->Get('Elasticsearch::TicketSearchFields');
         my @SearchFields   = @{ $FulltextFields->{Ticket} };
+
+        # remove weights from searchfieldsm eg 'Title^3' -> 'Title'
+        for my $Index ( 0 .. $#SearchFields ) {
+
+            $SearchFields[$Index] =~ s/\^[0-9]+$//;
+        }
+
         push @SearchFields, ( map {"ArticlesExternal.$_"} @{ $FulltextFields->{Article} } );
         push @SearchFields, ( "AttachmentsExternal.Content", "AttachmentsExternal.Filename" );
 
@@ -496,10 +503,12 @@ sub TicketSearch {
             }
         }
 
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'debug',
-            Message  => "Elasticsearch [ticket] Similar Search Query: " . $Param{MoreLikeThis}
-        );
+# Issue 5814- reduce logging, re-enable for debugging manually if needed:
+#
+#        $Kernel::OM->Get('Kernel::System::Log')->Log(
+#            Priority => 'debug',
+#            Message  => "Elasticsearch [ticket] Similar Search Query: " . $Param{MoreLikeThis}
+#        );
 
         # add queue restrictions
         push @Musts, {
@@ -559,10 +568,11 @@ sub TicketSearch {
     my $Total   = $Result->{Data}->{Total}   // 0;
     my $Records = $Result->{Data}->{Records} // [];
 
-    $Kernel::OM->Get('Kernel::System::Log')->Log(
-        Priority => 'debug',
-        Message  => "Elasticsearch [ticket] Result: " . $Total . " Hits\n"
-    );
+# Issue 5814- reduce logging, re-enable for debugging manually if needed:
+#    $Kernel::OM->Get('Kernel::System::Log')->Log(
+#        Priority => 'debug',
+#        Message  => "Elasticsearch [ticket] Result: " . $Total . " Hits\n"
+#    );
 
     # convert the Elasticsearch return to the needed OTRS structure and return
 
