@@ -134,7 +134,6 @@ sub Run {
         my %SetInnerFields;
         DYNAMICFIELD:
         for my $DynamicFieldConfig ( values $Definition->{DynamicFieldRef}->%* ) {
-
             next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
             next DYNAMICFIELD unless $DynamicFieldConfig->{FieldType} eq 'Set';
             next DYNAMICFIELD unless IsArrayRefWithData( $DynamicFieldConfig->{Config}{Include} );
@@ -238,7 +237,6 @@ sub Run {
             # cycle trough the activated Dynamic Fields for this screen
             DYNAMICFIELD:
             for my $DynamicFieldConfig ( values $Definition->{DynamicFieldRef}->%* ) {
-
                 next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
                 next DYNAMICFIELD unless $DynamicFieldConfig->{Name};
                 next DYNAMICFIELD unless $Self->{Config}{DynamicField}{ $DynamicFieldConfig->{Name} };
@@ -506,7 +504,6 @@ sub Run {
         # cycle trough the activated Dynamic Fields for this definition
         DYNAMICFIELD:
         for my $DynamicFieldConfig ( sort { $a->{Label} cmp $b->{Label} } values $Definition->{DynamicFieldRef}->%* ) {
-
             next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
             next DYNAMICFIELD unless $DynamicFieldConfig->{Name};
             next DYNAMICFIELD unless $Self->{Config}{DynamicField}{ $DynamicFieldConfig->{Name} };
@@ -565,7 +562,6 @@ sub Run {
         # cycle trough the activated Dynamic Fields for this screen
         DYNAMICFIELD:
         for my $DynamicFieldConfig ( values $Definition->{DynamicFieldRef}->%* ) {
-
             next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
             next DYNAMICFIELD unless $Self->{Config}{DynamicField}{ $DynamicFieldConfig->{Name} };
             next DYNAMICFIELD unless $PermittedDynamicFields{ $DynamicFieldConfig->{Name} };
@@ -753,7 +749,6 @@ sub Run {
         # cycle trough the activated Dynamic Fields for this screen
         DYNAMICFIELD:
         for my $DynamicFieldConfig ( values $Definition->{DynamicFieldRef}->%* ) {
-
             next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
             next DYNAMICFIELD unless $DynamicFieldConfig->{Name};
             next DYNAMICFIELD unless $Self->{Config}{DynamicField}{ $DynamicFieldConfig->{Name} };
@@ -1003,7 +998,6 @@ sub Run {
         my %SetInnerFields;
         DYNAMICFIELD:
         for my $DynamicFieldConfig ( values $Definition->{DynamicFieldRef}->%* ) {
-
             next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
             next DYNAMICFIELD unless $DynamicFieldConfig->{FieldType} eq 'Set';
             next DYNAMICFIELD unless IsArrayRefWithData( $DynamicFieldConfig->{Config}{Include} );
@@ -1026,7 +1020,6 @@ sub Run {
 
                         next ROW unless IsArrayRefWithData($Row);
 
-                        ROWELEMENT:
                         for my $RowElement ( $Row->@* ) {
                             if ( $RowElement->{DF} ) {
                                 $RowElement->{Definition}{Label} = $LayoutObject->{LanguageObject}->Translate( $DynamicFieldConfig->{Label} ) . '::'
@@ -1153,7 +1146,6 @@ sub Run {
         # cycle trough the activated Dynamic Fields for this screen
         DYNAMICFIELD:
         for my $DynamicFieldConfig ( values $Definition->{DynamicFieldRef}->%* ) {
-
             next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
             next DYNAMICFIELD unless $DynamicFieldConfig->{Name};
             next DYNAMICFIELD unless $Self->{Config}{DynamicField}{ $DynamicFieldConfig->{Name} };
@@ -1215,7 +1207,7 @@ sub Run {
             );
         }
 
-        # get the confconfig item dynamic fields for CSV display
+        # get the config item dynamic fields for CSV display
         my $CSVDynamicField = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldListGet(
             Valid       => 1,
             ObjectType  => ['ITSMConfigItem'],

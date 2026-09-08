@@ -228,8 +228,7 @@ sub Run {
 
     if ( IsHashRefWithData($PermissionConditionsConfig) ) {
         PERMCONF:
-        for my $ConfigCounter ( 1 .. 5 ) {
-            my $ConfigIdentifier          = sprintf( "%02d", $ConfigCounter );
+        for my $ConfigIdentifier ( sort keys $PermissionConditionsConfig->%* ) {
             my $PermissionConditionConfig = $PermissionConditionsConfig->{$ConfigIdentifier};
             next PERMCONF unless IsHashRefWithData($PermissionConditionConfig);
 
@@ -432,9 +431,8 @@ sub Run {
         }
     }
 
-    # get personal page shown count
-    my $PageShownPreferencesKey = 'UserConfigItemOverview' . $View . 'PageShown';
-    my $PageShown               = $Self->{$PageShownPreferencesKey} || 10;
+    # get customer page shown count
+    my $PageShown = $Backends->{$View} ? $Backends->{$View}->{PageShown} : 10;
     my %PageNav;
 
     # do shown config item lookup
