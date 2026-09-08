@@ -211,7 +211,7 @@ sub Run {
         else {
 
             # get search string params (get submitted params)
-            for my $Key (qw(Number Name PreviousVersionSearch ResultForm ShownAttributes)) {
+            for my $Key (qw(Number Name ResultForm ShownAttributes)) {
 
                 # get search string params (get submitted params)
                 $GetParam{$Key} = $ParamObject->GetParam( Param => $Key );
@@ -705,17 +705,6 @@ sub Run {
             Class      => 'Modernize',
         );
 
-        # generate PreviousVersionOptionStrg
-        my $PreviousVersionOptionStrg = $LayoutObject->BuildSelection(
-            Name => 'PreviousVersionSearch',
-            Data => {
-                0 => Translatable('No'),
-                1 => Translatable('Yes'),
-            },
-            SelectedID => $GetParam{PreviousVersionSearch} || '0',
-            Class      => 'Modernize',
-        );
-
         # build output format string
         $Param{ResultFormStrg} = $LayoutObject->BuildSelection(
             Data => {
@@ -732,16 +721,15 @@ sub Run {
         $LayoutObject->Block(
             Name => 'AJAXContent',
             Data => {
-                ClassID                   => $ClassID,
-                CurDeplStateOptionStrg    => $CurDeplStateOptionStrg,
-                CurInciStateOptionStrg    => $CurInciStateOptionStrg,
-                PreviousVersionOptionStrg => $PreviousVersionOptionStrg,
-                AttributesStrg            => $Param{AttributesStrg},
-                AttributesOrigStrg        => $Param{AttributesOrigStrg},
-                ResultFormStrg            => $Param{ResultFormStrg},
-                ProfilesStrg              => $Param{ProfilesStrg},
-                Number                    => $GetParam{Number} || '',
-                Name                      => $GetParam{Name}   || '',
+                ClassID                => $ClassID,
+                CurDeplStateOptionStrg => $CurDeplStateOptionStrg,
+                CurInciStateOptionStrg => $CurInciStateOptionStrg,
+                AttributesStrg         => $Param{AttributesStrg},
+                AttributesOrigStrg     => $Param{AttributesOrigStrg},
+                ResultFormStrg         => $Param{ResultFormStrg},
+                ProfilesStrg           => $Param{ProfilesStrg},
+                Number                 => $GetParam{Number} || '',
+                Name                   => $GetParam{Name}   || '',
             },
         );
 
