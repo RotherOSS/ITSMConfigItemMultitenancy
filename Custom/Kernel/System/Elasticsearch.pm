@@ -4,7 +4,7 @@
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
 # Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
-# $origin: otobo - dfe5c0f02b2496b265f85ed662261591507c6b79 - Kernel/System/Elasticsearch.pm
+# $origin: otobo - 0d701e4d40b0cccf2ca9222b844b916b2db85653 - Kernel/System/Elasticsearch.pm
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
