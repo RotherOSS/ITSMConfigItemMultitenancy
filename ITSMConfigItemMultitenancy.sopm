@@ -7,7 +7,8 @@
     <Vendor>Rother OSS GmbH</Vendor>
     <URL>https://otobo.io/</URL>
     <License>GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007</License>
-    <Description Lang="en">The OTOBO ITSM CMDB Package enhanced with group permissions at config item level.</Description>
+    <Description Lang="en">The OTOBO ITSM CMDB package enhanced with group permissions at config item level.</Description>
+    <Description Lang="hu">Az OTOBO ITSM CMDB-csomag csoportjogosultságokkal kibővítve a konfigurációelem szintjén.</Description>
     <Filelist>
         <File Permission="660" Location="Custom/Kernel/GenericInterface/Operation/ConfigItem/ConfigItemUpsert.pm" />
         <File Permission="660" Location="Custom/Kernel/Modules/AgentITSMConfigItemEdit.pm" />
@@ -30,6 +31,12 @@
 
         <br/>
         If you are using Elasticsearch, please execute the console command "bin/otobo.Console.pl Maint::Elasticsearch::Migration --target i"<br/>
+
+    ]]></IntroInstall>
+    <IntroInstall Type="post" Title="Örökölt hivatkozási mezők átalakítása" Lang="hu"><![CDATA[
+
+        <br/>
+        Ha Elasticsearch keresőt használ, akkor hajtsa végre a „bin/otobo.Console.pl Maint::Elasticsearch::Migration --target i” konzolparancsot.<br/>
 
     ]]></IntroInstall>
     <DatabaseInstall Type="post">
